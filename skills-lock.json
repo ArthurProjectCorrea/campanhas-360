@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f0fdd03f4755cbb3b57e20fe6fd4a97c00d34e6780187b6559316986e8d848db"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "619f8ed766ab6d44c46cbbb0a946f4d2a10a527b589fcec53c10f5faa5496d55"
+    },
+    "update-docs": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/update-docs/SKILL.md",
+      "computedHash": "034e91004b30db6f2f432cecbc1fe09e8293a7baeaa2238eed25740bd3afb895"
+    }
+  }
+}

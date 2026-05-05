@@ -1,0 +1,16 @@
+{
+  "tasks": {
+    "build": {
+      "description": "Compiles TypeScript and bundles the application",
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "description": "Runs the test suite with coverage",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "description": "Checks code style and catches common errors"
+    }
+  }
+}

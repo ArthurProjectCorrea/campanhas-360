@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build Outputs
+.next/
+.turbo/
+dist/
+build/
+bin/
+obj/
+docs/
+
+# API (Handled by dotnet format)
+apps/api/
+
+# Secrets & Configs
+.env*
+*.local
+
+# web
+**/next-env.d.ts

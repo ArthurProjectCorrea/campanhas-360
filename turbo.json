@@ -11,6 +11,9 @@
     },
     "lint": {
       "description": "Checks code style and catches common errors"
+    },
+    "format": {
+      "description": "Auto-formats code using Prettier"
     }
   }
 }

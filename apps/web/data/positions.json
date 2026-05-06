@@ -1,10 +1,10 @@
 [
   {
-    "CD_CARGO": 13,
-    "DS_CARGO": "VEREADOR"
+    "id": 13,
+    "name": "VEREADOR"
   },
   {
-    "CD_CARGO": 12,
-    "DS_CARGO": "VICE-PREFEITO"
+    "id": 12,
+    "name": "VICE-PREFEITO"
   }
 ]

@@ -11,17 +11,23 @@ export type SessionPayload = {
 }
 
 export type User = {
-  id: string
+  id: string | number
   name: string
   email: string
   password?: string
-  client_id: string
+  client_id: string | number
   is_active: boolean
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
 }
 
 export type Client = {
-  id: string
-  name: string
+  id: string | number
+  name?: string
   domain: string
   is_active: boolean
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
 }

@@ -25,10 +25,11 @@ O sistema suporta múltiplos clientes (tenants). Cada usuário está vinculado a
 ### 3.1. Verificação de Credenciais
 O sistema valida a combinação de E-mail e Senha. Em caso de falha, uma mensagem genérica é exibida para evitar a enumeração de usuários.
 
-### 3.2. Controle de Status (Ativo/Inativo)
-- **Usuário**: Se `is_active` for `false`, o acesso é negado.
-- **Cliente (Empresa)**: Se a empresa (`client.is_active`) estiver desativada, todos os usuários vinculados a ela perdem o acesso imediatamente.
-- **Privacidade**: Ambos os casos retornam a mesma mensagem: *"Acesso negado. Entre em contato com o suporte."*
+### 3.2. Controle de Status (Ativo/Inativo e Soft Delete)
+- **Soft Delete**: Se o campo `deleted_at` possuir uma data (não nulo) no **Usuário** ou no **Cliente**, o acesso é negado.
+- **Usuário Ativo**: Se `is_active` for `false`, o acesso é negado.
+- **Cliente Ativo (Empresa)**: Se a empresa (`client.is_active`) estiver desativada, todos os usuários vinculados a ela perdem o acesso imediatamente.
+- **Mensagem de Erro Unificada**: Para todos os casos acima (inativação ou exclusão lógica), o sistema retorna: *"Acesso negado. Entre em contato com o suporte."* Isso diferencia erros de conta (status) de erros de credenciais (e-mail/senha).
 
 ### 3.3. Proteção de Rotas (Proxy/Middleware)
 O arquivo `proxy.ts` atua como um gatekeeper:

@@ -31,26 +31,21 @@ export async function signInAction(
     // Busca o cliente do usuário
     const client = (clients as Client[]).find(c => c.id === user.client_id)
 
-    if (!client) {
-      return {
-        success: false,
-        message: 'Cliente não encontrado.',
+    if (client) {
+      // Validação de conta ativa ou excluída (Usuário e Cliente)
+      if (!user.is_active || user.deleted_at || !client.is_active || client.deleted_at) {
+        return {
+          success: false,
+          message: 'Acesso negado. Entre em contato com o suporte.',
+        }
       }
+
+      // Criação da sessão segura com o domínio do cliente
+      await createSession(user.id.toString(), client.domain)
+
+      // Redireciona para o dashboard do domínio
+      redirect(`/${client.domain}/dashboard`)
     }
-
-    // Validação de conta ativa (Usuário e Cliente)
-    if (!user.is_active || !client.is_active) {
-      return {
-        success: false,
-        message: 'Acesso negado. Entre em contato com o suporte.',
-      }
-    }
-
-    // Criação da sessão segura com o domínio do cliente
-    await createSession(user.id, client.domain)
-
-    // Redireciona para o dashboard do domínio
-    redirect(`/${client.domain}/dashboard`)
   }
 
   // Mensagem genérica por segurança

@@ -60,7 +60,7 @@ export function ProfileClient({ data }: { data: SidebarData | null }) {
                     src={data.avatar_url}
                     alt={data.ballot_name}
                     fill
-                    className="object-cover object-top"
+                    className="object-contain"
                     sizes="128px"
                   />
                 ) : (

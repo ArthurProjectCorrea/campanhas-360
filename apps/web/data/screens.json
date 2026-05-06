@@ -9,10 +9,18 @@
   },
   {
     "id": 2,
-    "key": "regional-planning",
+    "key": "regional_planning",
     "title": "Planejamento Regional",
     "description": "Gestão de zonas eleitorais e roteiros",
     "sidebar": "Planejamento",
     "icon": "square-chart-gantt"
+  },
+  {
+    "id": 3,
+    "key": "organization_profile",
+    "title": "Perfil da Organização",
+    "description": "Controle de dados da Organização",
+    "sidebar": "Organização",
+    "icon": "user-round-pen"
   }
 ]

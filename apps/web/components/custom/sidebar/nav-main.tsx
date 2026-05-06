@@ -1,17 +1,20 @@
 'use client'
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import Link from 'next/link'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
-import { ChevronRightIcon } from 'lucide-react'
+import { EllipsisVertical } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { NavMainItem } from '@/types'
 
@@ -31,40 +34,42 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
             ? (Icons as unknown as Record<string, Icons.LucideIcon>)[iconName] || Icons.HelpCircle
             : Icons.HelpCircle
 
+          // Se for um item simples (sem sub-itens)
+          if (!item.items || item.items.length === 0) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title}>
+                  <Link href={item.url || '#'}>
+                    <Icon className="size-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          }
+
+          // Se for um grupo com sub-itens, usa DropdownMenu
           return (
-            <Collapsible
-              key={item.title}
-              asChild
-              defaultOpen={item.isActive}
-              className="group/collapsible"
-            >
-              <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
+            <SidebarMenuItem key={item.title}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <SidebarMenuButton tooltip={item.title}>
                     <Icon className="size-4" />
                     <span>{item.title}</span>
-                    {item.items && item.items.length > 0 && (
-                      <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    )}
+                    <EllipsisVertical className="ml-auto size-4 opacity-50" />
                   </SidebarMenuButton>
-                </CollapsibleTrigger>
-                {item.items && item.items.length > 0 && (
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map(subItem => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                )}
-              </SidebarMenuItem>
-            </Collapsible>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="start" className="w-48">
+                  {item.items.map(subItem => (
+                    <DropdownMenuItem key={subItem.title} asChild>
+                      <Link href={subItem.url || '#'} className="flex w-full items-center">
+                        <span>{subItem.title}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
           )
         })}
       </SidebarMenu>

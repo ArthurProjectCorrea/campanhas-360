@@ -2,6 +2,7 @@ export type ActionState = {
   success?: boolean
   message?: string
   errors?: Record<string, string[]>
+  data?: Record<string, unknown>
 }
 
 export type SessionPayload = {
@@ -67,6 +68,7 @@ export type Client = {
   party_id: string | number
   candidate_number: number
   election_year: number
+  avatar_url?: string
   is_active: boolean
   created_at?: string
   updated_at?: string

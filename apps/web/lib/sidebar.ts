@@ -2,15 +2,35 @@ import { Screen, NavMainItem } from '@/types'
 
 interface TemplateItem {
   key?: string
-  title?: string
+  name?: string
+  url?: string
   icon?: string
   isActive?: boolean
-  items?: { key: string }[]
+  items?: { key: string; url: string }[]
 }
 
 export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainItem[] => {
-  // O template define a ORDEM e a ESTRUTURA (grupos) da sidebar
-  const template: TemplateItem[] = [{ key: 'dashboard' }, { key: 'regional-planning' }]
+  // O template define a ORDEM, a ESTRUTURA e as URLs da sidebar
+  const template: TemplateItem[] = [
+    {
+      key: 'dashboard',
+      url: `/${domain}/dashboard`,
+    },
+    {
+      key: 'regional_planning',
+      url: `/${domain}/regional_planning`,
+    },
+    {
+      name: 'Configurações',
+      icon: 'settings',
+      items: [
+        {
+          key: 'organization_profile',
+          url: `/${domain}/settings/organization-profile`,
+        },
+      ],
+    },
+  ]
 
   const mappedItems: (NavMainItem | null)[] = template.map(item => {
     // Se for um grupo com sub-itens
@@ -21,7 +41,7 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
           if (!screen) return null
           return {
             title: screen.sidebar || screen.title,
-            url: `/${domain}/${screen.key}`,
+            url: sub.url,
           }
         })
         .filter((sub): sub is { title: string; url: string } => sub !== null)
@@ -30,7 +50,7 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
       if (subItems.length === 0) return null
 
       return {
-        title: item.title || '',
+        title: item.name || '',
         icon: item.icon,
         isActive: item.isActive,
         items: subItems,
@@ -43,7 +63,7 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
 
     return {
       title: screen.sidebar || screen.title,
-      url: `/${domain}/${screen.key}`,
+      url: item.url || `/${domain}/${screen.key}`,
       icon: screen.icon,
     }
   })

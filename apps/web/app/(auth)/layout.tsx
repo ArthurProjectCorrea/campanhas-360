@@ -10,12 +10,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 font-medium">
             <Image
-              src="/next.svg"
+              src="/campanha-logo-light.svg"
               alt="Logo"
-              width={100}
-              height={24}
+              width={150}
+              height={50}
               priority
-              className="h-6 w-auto dark:invert"
+              className="h-12 w-auto dark:hidden"
+            />
+            <Image
+              src="/campanha-logo-dark.svg"
+              alt="Logo"
+              width={150}
+              height={50}
+              priority
+              className="hidden h-12 w-auto dark:block"
             />
           </Link>
           <ModeToggle />

@@ -6,10 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
-const geistSans = Geist({
-  variable: '--font-sans',
-  subsets: ['latin'],
-})
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 
 const geistMono = Geist_Mono({
   variable: '--font-mono',
@@ -30,13 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={cn(
         'h-full',
         'antialiased',
-        geistSans.variable,
         geistMono.variable,
         inter.variable,
+        'font-sans',
+        geist.variable,
       )}
       suppressHydrationWarning
     >

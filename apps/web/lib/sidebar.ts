@@ -1,137 +1,59 @@
-import * as React from 'react'
-import {
-  GalleryVerticalEndIcon,
-  AudioLinesIcon,
-  TerminalIcon,
-  TerminalSquareIcon,
-  BotIcon,
-  BookOpenIcon,
-  Settings2Icon,
-  FrameIcon,
-  PieChartIcon,
-  MapIcon,
-} from 'lucide-react'
+import { Screen, NavMainItem } from '@/types'
+
+interface TemplateItem {
+  key?: string
+  title?: string
+  icon?: string
+  isActive?: boolean
+  items?: { key: string }[]
+}
+
+export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainItem[] => {
+  // O template define a ORDEM e a ESTRUTURA (grupos) da sidebar
+  const template: TemplateItem[] = [{ key: 'dashboard' }, { key: 'regional-planning' }]
+
+  const mappedItems: (NavMainItem | null)[] = template.map(item => {
+    // Se for um grupo com sub-itens
+    if (item.items) {
+      const subItems = item.items
+        .map(sub => {
+          const screen = permittedScreens.find(s => s.key === sub.key)
+          if (!screen) return null
+          return {
+            title: screen.sidebar || screen.title,
+            url: `/${domain}/${screen.key}`,
+          }
+        })
+        .filter((sub): sub is { title: string; url: string } => sub !== null)
+
+      // Se o grupo não tiver nenhum item permitido, oculta o grupo todo
+      if (subItems.length === 0) return null
+
+      return {
+        title: item.title || '',
+        icon: item.icon,
+        isActive: item.isActive,
+        items: subItems,
+      }
+    }
+
+    // Se for um item simples
+    const screen = permittedScreens.find(s => s.key === item.key)
+    if (!screen) return null
+
+    return {
+      title: screen.sidebar || screen.title,
+      url: `/${domain}/${screen.key}`,
+      icon: screen.icon,
+    }
+  })
+
+  return mappedItems.filter((item): item is NavMainItem => item !== null)
+}
 
 export const data = {
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: React.createElement(GalleryVerticalEndIcon),
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: React.createElement(AudioLinesIcon),
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: React.createElement(TerminalIcon),
-      plan: 'Free',
-    },
-  ],
-  navMain: [
-    {
-      title: 'Playground',
-      url: '#',
-      icon: React.createElement(TerminalSquareIcon),
-      isActive: true,
-      items: [
-        {
-          title: 'History',
-          url: '#',
-        },
-        {
-          title: 'Starred',
-          url: '#',
-        },
-        {
-          title: 'Settings',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Models',
-      url: '#',
-      icon: React.createElement(BotIcon),
-      items: [
-        {
-          title: 'Genesis',
-          url: '#',
-        },
-        {
-          title: 'Explorer',
-          url: '#',
-        },
-        {
-          title: 'Quantum',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Documentation',
-      url: '#',
-      icon: React.createElement(BookOpenIcon),
-      items: [
-        {
-          title: 'Introduction',
-          url: '#',
-        },
-        {
-          title: 'Get Started',
-          url: '#',
-        },
-        {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Settings',
-      url: '#',
-      icon: React.createElement(Settings2Icon),
-      items: [
-        {
-          title: 'General',
-          url: '#',
-        },
-        {
-          title: 'Team',
-          url: '#',
-        },
-        {
-          title: 'Billing',
-          url: '#',
-        },
-        {
-          title: 'Limits',
-          url: '#',
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: 'Design Engineering',
-      url: '#',
-      icon: React.createElement(FrameIcon),
-    },
-    {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: React.createElement(PieChartIcon),
-    },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: React.createElement(MapIcon),
-    },
-  ],
+  // Mantemos o objeto data para outros usos se necessário,
+  // mas o navMain agora é gerado dinamicamente via getNavMain
+  teams: [],
+  projects: [],
 }

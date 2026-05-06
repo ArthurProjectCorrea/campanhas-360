@@ -1,7 +1,7 @@
 import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { SessionPayload } from '@/types'
+import { SessionPayload, AccessProfile } from '@/types'
 
 const secretKey = process.env.SESSION_SECRET || 'campanhas-360-secret-key-super-secure-123'
 const encodedKey = new TextEncoder().encode(secretKey)
@@ -25,9 +25,9 @@ export async function decrypt(session: string | undefined = '') {
   }
 }
 
-export async function createSession(userId: string, domain: string) {
+export async function createSession(userId: string, domain: string, accessProfile?: AccessProfile) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, domain, expiresAt })
+  const session = await encrypt({ userId, domain, accessProfile, expiresAt })
   const cookieStore = await cookies()
 
   cookieStore.set('session', session, {

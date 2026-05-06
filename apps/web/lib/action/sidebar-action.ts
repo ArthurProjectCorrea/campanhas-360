@@ -9,7 +9,9 @@ import positions from '@/data/positions.json'
 import parties from '@/data/party.json'
 import municipalities from '@/data/municipalities.json'
 import states from '@/data/states.json'
-import { User, Client, Candidate, Position, SidebarData } from '@/types'
+import screens from '@/data/screens.json'
+import { getNavMain } from '@/lib/sidebar'
+import { User, Client, Candidate, Position, SidebarData, Screen } from '@/types'
 
 export async function getSidebarData(): Promise<SidebarData | null> {
   const cookieStore = await cookies()
@@ -48,6 +50,16 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     ? `${municipality.name}${state ? `-${state.sigla}` : ''}`
     : ''
 
+  // 1. Filtra as telas permitidas (view) baseadas no perfil de acesso da sessão
+  const permittedScreens = (screens as Screen[]).filter(screen =>
+    payload.accessProfile?.accesses.some(
+      a => a.screen_key === screen.key && a.permission_key === 'view',
+    ),
+  )
+
+  // 2. Gera o NavMain passando as telas permitidas para o template em sidebar.ts
+  const navMain = getNavMain(permittedScreens, client.domain)
+
   return {
     ballot_name: candidate?.ballot_name || 'Candidato',
     position_name: position?.name || 'Cargo',
@@ -59,5 +71,6 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     municipality_name: municipalityDisplay,
     user_name: user.name,
     user_email: user.email,
+    navMain,
   }
 }

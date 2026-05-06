@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "key": "dashboard",
+    "title": "Dashboard Executivo",
+    "description": "Visão geral da campanha",
+    "sidebar": "Dashboard",
+    "icon": "layout-dashboard"
+  },
+  {
+    "id": 2,
+    "key": "regional-planning",
+    "title": "Planejamento Regional",
+    "description": "Gestão de zonas eleitorais e roteiros",
+    "sidebar": "Planejamento",
+    "icon": "square-chart-gantt"
+  }
+]

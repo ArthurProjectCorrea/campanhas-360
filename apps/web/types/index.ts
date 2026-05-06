@@ -7,6 +7,7 @@ export type ActionState = {
 export type SessionPayload = {
   userId: string
   domain: string
+  accessProfile?: AccessProfile
   expiresAt: Date
 }
 
@@ -16,7 +17,41 @@ export type User = {
   email: string
   password?: string
   client_id: string | number
+  access_profile_id: number | AccessProfile
   is_active: boolean
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
+}
+
+export type Permission = {
+  id: number
+  key: string
+  name: string
+}
+
+export type Screen = {
+  id: number
+  key: string
+  title: string
+  description?: string
+  sidebar?: string
+  icon: string
+}
+
+export type Access = {
+  access_profile_id: number
+  permission_id: number
+  screen_id: number
+  permission_key?: string
+  screen_key?: string
+}
+
+export type AccessProfile = {
+  id: number
+  name: string
+  is_active: boolean
+  accesses: Access[]
   created_at?: string
   updated_at?: string
   deleted_at?: string | null
@@ -58,6 +93,17 @@ export type Position = {
   name: string
 }
 
+export type NavMainItem = {
+  title: string
+  url?: string
+  icon?: string
+  isActive?: boolean
+  items?: {
+    title: string
+    url: string
+  }[]
+}
+
 export type SidebarData = {
   ballot_name: string
   position_name: string
@@ -69,4 +115,5 @@ export type SidebarData = {
   municipality_name: string
   user_name: string
   user_email: string
+  navMain: NavMainItem[]
 }

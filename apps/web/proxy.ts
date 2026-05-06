@@ -17,7 +17,6 @@ export default async function proxy(req: NextRequest) {
   const pathParts = path.split('/').filter(Boolean)
 
   // Verifica se o caminho atual segue o padrão /[domain]/dashboard/...
-  const isDomainRoute = pathParts.length >= 1
   const domainInUrl = pathParts[0]
   const isDashboardRequest = pathParts[1] === 'dashboard'
 

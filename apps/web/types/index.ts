@@ -6,6 +6,7 @@ export type ActionState = {
 
 export type SessionPayload = {
   userId: string
+  domain: string
   expiresAt: Date
 }
 
@@ -14,4 +15,13 @@ export type User = {
   name: string
   email: string
   password?: string
+  client_id: string
+  is_active: boolean
+}
+
+export type Client = {
+  id: string
+  name: string
+  domain: string
+  is_active: boolean
 }

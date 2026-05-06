@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "name": "Google",
+    "domain": "google.com",
+    "is_active": true
+  },
+  {
+    "id": "2",
+    "name": "Microsoft",
+    "domain": "microsoft.com",
+    "is_active": false
+  }
+]

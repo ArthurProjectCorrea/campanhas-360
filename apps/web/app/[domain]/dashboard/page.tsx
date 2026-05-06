@@ -2,14 +2,16 @@ import { signOutAction } from '@/lib/action/sign-out-action'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function DashboardPage() {
+export default async function DashboardPage({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain } = await params
+
   return (
     <div className="flex min-h-svh items-center justify-center p-6 md:p-10">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Dashboard</CardTitle>
+          <CardTitle className="text-2xl font-bold">Dashboard - {domain}</CardTitle>
           <CardDescription>
-            Bem-vindo à sua área restrita. Você está autenticado com sucesso.
+            Bem-vindo à área restrita da <strong>{domain}</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

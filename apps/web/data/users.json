@@ -1,6 +1,18 @@
-{
-  "id": "1",
-  "name": "John Doe",
-  "email": "exemple@gmail.com",
-  "password": "Senha@123"
-}
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "email": "exemple@email.com",
+    "password": "Senha@123",
+    "client_id": "1",
+    "is_active": true
+  },
+  {
+    "id": "2",
+    "name": "John Doe",
+    "email": "exemple2@email.com",
+    "password": "Senha@123",
+    "client_id": "2",
+    "is_active": false
+  }
+]

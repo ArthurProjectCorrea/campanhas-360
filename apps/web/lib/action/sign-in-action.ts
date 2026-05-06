@@ -1,9 +1,10 @@
 'use server'
 
 import users from '@/data/users.json'
+import clients from '@/data/clients.json'
 import { createSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
-import { ActionState } from '@/types'
+import { ActionState, User, Client } from '@/types'
 
 export async function signInAction(
   _prevState: ActionState,
@@ -23,11 +24,33 @@ export async function signInAction(
     }
   }
 
-  // Verificação de credenciais contra o JSON (simulado)
-  if (email === users.email && password === users.password) {
-    // Criação da sessão segura
-    await createSession(users.id)
-    redirect('/dashboard')
+  // Verificação de credenciais
+  const user = (users as User[]).find(u => u.email === email && u.password === password)
+
+  if (user) {
+    // Busca o cliente do usuário
+    const client = (clients as Client[]).find(c => c.id === user.client_id)
+
+    if (!client) {
+      return {
+        success: false,
+        message: 'Cliente não encontrado.',
+      }
+    }
+
+    // Validação de conta ativa (Usuário e Cliente)
+    if (!user.is_active || !client.is_active) {
+      return {
+        success: false,
+        message: 'Acesso negado. Entre em contato com o suporte.',
+      }
+    }
+
+    // Criação da sessão segura com o domínio do cliente
+    await createSession(user.id, client.domain)
+
+    // Redireciona para o dashboard do domínio
+    redirect(`/${client.domain}/dashboard`)
   }
 
   // Mensagem genérica por segurança

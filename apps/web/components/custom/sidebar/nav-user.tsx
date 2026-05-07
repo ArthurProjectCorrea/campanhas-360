@@ -23,8 +23,11 @@ import {
   CreditCardIcon,
   BellIcon,
   LogOutIcon,
+  SettingsIcon,
 } from 'lucide-react'
 import { signOutAction } from '@/lib/action/sign-out-action'
+import { AccountDialog } from '@/components/dialog/account-dialog'
+import { SettingsDialog } from '@/components/dialog/settings-dialog'
 
 export function NavUser({
   user,
@@ -93,10 +96,12 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon />
-                Minha Conta
-              </DropdownMenuItem>
+              <AccountDialog>
+                <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                  <BadgeCheckIcon />
+                  Minha Conta
+                </DropdownMenuItem>
+              </AccountDialog>
               <DropdownMenuItem>
                 <CreditCardIcon />
                 Faturamento
@@ -105,6 +110,12 @@ export function NavUser({
                 <BellIcon />
                 Notificações
               </DropdownMenuItem>
+              <SettingsDialog>
+                <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                  <SettingsIcon />
+                  Configurações
+                </DropdownMenuItem>
+              </SettingsDialog>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => signOutAction()}>

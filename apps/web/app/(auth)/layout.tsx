@@ -1,7 +1,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ModeToggle } from '@/components/mode-toggle'
+import { ModeToggle } from '@/components/custom/mode-toggle'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

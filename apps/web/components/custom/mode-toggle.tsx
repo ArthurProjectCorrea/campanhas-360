@@ -11,9 +11,46 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from '@/components/ui/field'
+import { Switch } from '@/components/ui/switch'
 
-export function ModeToggle() {
-  const { setTheme } = useTheme()
+interface ModeToggleProps {
+  variant?: 'dropdown' | 'switch'
+}
+
+export function ModeToggle({ variant = 'dropdown' }: ModeToggleProps) {
+  const { setTheme, theme, resolvedTheme } = useTheme()
+
+  if (variant === 'switch') {
+    const isDark = (theme === 'system' ? resolvedTheme : theme) === 'dark'
+
+    return (
+      <FieldGroup className="w-full">
+        <FieldLabel htmlFor="dark-mode">
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldTitle>Tema Visual</FieldTitle>
+              <FieldDescription>
+                {isDark ? 'Tema escuro ativado' : 'Tema claro ativado'}
+              </FieldDescription>
+            </FieldContent>
+            <Switch
+              id="dark-mode"
+              checked={isDark}
+              onCheckedChange={checked => setTheme(checked ? 'dark' : 'light')}
+            />
+          </Field>
+        </FieldLabel>
+      </FieldGroup>
+    )
+  }
 
   return (
     <DropdownMenu>

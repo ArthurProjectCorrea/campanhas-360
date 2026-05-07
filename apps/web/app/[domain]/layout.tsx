@@ -6,7 +6,7 @@ export default function DomainLayout({ children }: { children: React.ReactNode }
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 pt-0">
           <NextTopLoader showSpinner={false} />
           {children}
         </div>

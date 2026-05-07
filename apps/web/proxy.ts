@@ -3,7 +3,14 @@ import { decrypt } from '@/lib/session'
 import { cookies } from 'next/headers'
 
 // Rotas públicas que não requerem autenticação
-const publicRoutes = ['/sign-in', '/sign-up', '/']
+const publicRoutes = [
+  '/sign-in',
+  '/sign-up',
+  '/',
+  '/forgot-password',
+  '/verify-otp',
+  '/reset-password',
+]
 
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
@@ -12,6 +19,14 @@ export default async function proxy(req: NextRequest) {
   // Decifra a sessão do cookie
   const cookie = (await cookies()).get('session')?.value
   const session = await decrypt(cookie)
+
+  // Verifica token de reset para a rota /reset-password
+  if (path === '/reset-password') {
+    const resetToken = (await cookies()).get('reset-token')?.value
+    if (!resetToken) {
+      return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
+    }
+  }
 
   // Lógica de Multi-tenancy e Proteção
   const pathParts = path.split('/').filter(Boolean)

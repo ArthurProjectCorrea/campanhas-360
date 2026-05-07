@@ -22,5 +22,13 @@
     "description": "Controle de dados da Organização",
     "sidebar": "Organização",
     "icon": "user-round-pen"
+  },
+  {
+    "id": 4,
+    "key": "user_registration",
+    "title": "Cadastro de Usuários",
+    "description": "Cadastro e gerenciamento de usuários",
+    "sidebar": "Usuários",
+    "icon": "user-plus"
   }
 ]

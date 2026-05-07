@@ -3,8 +3,9 @@ import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 import { Toaster } from '@/components/ui/sonner'
-import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeProvider } from '@/components/provider/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import NextTopLoader from 'nextjs-toploader'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -45,7 +46,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            <NextTopLoader showSpinner={false} />
+            {children}
+          </TooltipProvider>
           <Toaster />
         </ThemeProvider>
       </body>

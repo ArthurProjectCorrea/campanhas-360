@@ -4,13 +4,12 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp'
 import { verifyOtpAction, forgotPasswordAction } from '@/lib/action/password-action'
 import { ActionState } from '@/types'
 
@@ -21,13 +20,15 @@ interface VerifyOtpFormProps {
 }
 
 export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
-  const router = useRouter()
+  const [otpValue, setOtpValue] = React.useState('')
 
   const [state, formAction, isPending] = useActionState(verifyOtpAction, initialState)
   const [resendState, resendAction, isResending] = useActionState(
     forgotPasswordAction,
     initialState,
   )
+
+  const isInvalid = state.success === false && !!state.message
 
   useEffect(() => {
     if (state.message && !state.success) {
@@ -56,6 +57,7 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
 
       <form action={formAction}>
         <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="otp" value={otpValue} />
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="email">E-mail</FieldLabel>
@@ -64,14 +66,27 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
 
           <Field className="flex flex-col items-center gap-4">
             <FieldLabel htmlFor="otp">Código de Verificação</FieldLabel>
-            <InputOTP id="otp" name="otp" maxLength={6} disabled={isPending} required>
+            <InputOTP
+              id="otp"
+              maxLength={6}
+              disabled={isPending}
+              required
+              value={otpValue}
+              onChange={setOtpValue}
+            >
               <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+                <InputOTPSlot className="w-15" index={0} aria-invalid={isInvalid} />
+                <InputOTPSlot className="w-15" index={1} aria-invalid={isInvalid} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot className="w-15" index={2} aria-invalid={isInvalid} />
+                <InputOTPSlot className="w-15" index={3} aria-invalid={isInvalid} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot className="w-15" index={4} aria-invalid={isInvalid} />
+                <InputOTPSlot className="w-15" index={5} aria-invalid={isInvalid} />
               </InputOTPGroup>
             </InputOTP>
           </Field>

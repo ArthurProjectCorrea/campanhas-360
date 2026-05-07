@@ -25,6 +25,10 @@ export type User = {
   deleted_at?: string | null
 }
 
+export interface UserRegistration extends User {
+  access_profile_name: string
+}
+
 export type Permission = {
   id: number
   key: string

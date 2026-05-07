@@ -4,7 +4,6 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +15,6 @@ import { ActionState } from '@/types'
 const initialState: ActionState = {}
 
 export function ForgotPasswordForm() {
-  const router = useRouter()
   const emailRef = React.useRef<HTMLInputElement>(null)
   const [state, formAction, isPending] = useActionState(forgotPasswordAction, initialState)
 

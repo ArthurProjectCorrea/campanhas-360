@@ -8,7 +8,6 @@ export default async function OrganizationProfilePage({
 }: {
   params: Promise<{ domain: string }>
 }) {
-  const { domain } = await params
   const data = await getOrganizationData()
 
   if (!data) {

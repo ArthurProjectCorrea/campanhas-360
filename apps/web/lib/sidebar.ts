@@ -28,6 +28,10 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
           key: 'organization_profile',
           url: `/${domain}/settings/organization-profile`,
         },
+        {
+          key: 'user_registration',
+          url: `/${domain}/settings/user-registration`,
+        },
       ],
     },
   ]

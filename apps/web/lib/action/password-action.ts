@@ -30,9 +30,6 @@ export async function forgotPasswordAction(
   // Busca o usuário na base simulada
   const user = (users as User[]).find(u => u.email.toLowerCase() === email.toLowerCase())
 
-  // Mensagem genérica para evitar enumeração de usuários
-  const successMessage = 'Código enviado com sucesso!'
-
   // Armazena o e-mail em um cookie para o próximo passo (expira em 10 min)
   const cookieStore = await cookies()
   cookieStore.set('pending-email', email, {
@@ -46,7 +43,7 @@ export async function forgotPasswordAction(
   if (!user) {
     // Simula um delay para dificultar ataques de timing
     await new Promise(resolve => setTimeout(resolve, 500))
-    return { success: true, message: successMessage }
+    redirect('/verify-otp')
   }
 
   // Gera código OTP de 6 dígitos

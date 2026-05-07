@@ -8,5 +8,15 @@
     "id": 2,
     "key": "update",
     "name": "Atualizar"
+  },
+  {
+    "id": 3,
+    "key": "delete",
+    "name": "Deletar"
+  },
+  {
+    "id": 4,
+    "key": "create",
+    "name": "Criar"
   }
 ]

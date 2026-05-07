@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +19,6 @@ interface ResetPasswordFormProps {
 const initialState: ActionState = {}
 
 export function ResetPasswordForm({ email }: ResetPasswordFormProps) {
-  const router = useRouter()
   const [state, formAction, isPending] = useActionState(resetPasswordAction, initialState)
 
   useEffect(() => {

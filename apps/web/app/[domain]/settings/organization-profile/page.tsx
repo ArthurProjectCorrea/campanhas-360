@@ -21,8 +21,8 @@ export default async function OrganizationProfilePage({
         title={data.screen?.title || 'Perfil da Organização'}
         description={data.screen?.description || 'Configure as informações da sua organização.'}
         breadcrumbs={[
-          { label: 'Configurações', href: `/${domain}/dashboard` },
-          { label: data.screen?.sidebar || data.screen?.title || 'Perfil da Organização' },
+          { label: 'Configurações' },
+          { label: data.screen?.title || 'Perfil da Organização' },
         ]}
       />
       <div className="flex flex-1 flex-col gap-4 p-4">

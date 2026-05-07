@@ -182,7 +182,7 @@ export function OrganizationProfileForm({
           </FieldGroup>
         </CardContent>
         {canUpdate && (
-          <CardFooter className="flex justify-end gap-3 border-t px-6 py-4">
+          <CardFooter className="flex justify-end gap-3 border-t px-6">
             <Button type="button" variant="outline" onClick={handleDiscard} disabled={isPending}>
               Descartar
             </Button>

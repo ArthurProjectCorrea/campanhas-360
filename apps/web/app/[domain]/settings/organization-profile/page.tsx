@@ -26,7 +26,11 @@ export default async function OrganizationProfilePage({
         ]}
       />
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <OrganizationProfileForm initialData={data.client} lookups={data.lookups} />
+        <OrganizationProfileForm
+          initialData={data.client}
+          lookups={data.lookups}
+          canUpdate={data.canUpdate}
+        />
       </div>
     </>
   )

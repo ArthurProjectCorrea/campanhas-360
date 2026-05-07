@@ -26,6 +26,7 @@ interface InputUploadProps {
   defaultValue?: string
   className?: string
   onFileChange?: (file: File | null) => void
+  disabled?: boolean
 }
 
 export function InputUpload({
@@ -37,6 +38,7 @@ export function InputUpload({
   defaultValue,
   className,
   onFileChange,
+  disabled,
 }: InputUploadProps) {
   const [preview, setPreview] = React.useState<string | null>(defaultValue || null)
   const [file, setFile] = React.useState<File | null>(null)
@@ -152,31 +154,33 @@ export function InputUpload({
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => inputRef.current?.click()}
-                disabled={isLoading}
-              >
-                {isLoading && <Spinner className="mr-2" />}
-                Alterar
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleClear}
-                disabled={isLoading}
-              >
-                {isLoading ? <Spinner className="mr-2" /> : <X className="h-4 w-4 mr-1" />}
-                Remover
-              </Button>
-            </div>
+            {!disabled && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  {isLoading && <Spinner className="mr-2" />}
+                  Alterar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleClear}
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Spinner className="mr-2" /> : <X className="h-4 w-4 mr-1" />}
+                  Remover
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Empty
             className="border border-dashed cursor-pointer hover:bg-muted/30 transition-colors"
-            onClick={() => !isLoading && inputRef.current?.click()}
+            onClick={() => !isLoading && !disabled && inputRef.current?.click()}
           >
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -187,12 +191,14 @@ export function InputUpload({
                 {description || `Clique para fazer upload (Máx. ${maxSize}MB)`}
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
-              <Button variant="outline" type="button" disabled={isLoading}>
-                {isLoading && <Spinner className="mr-2" />}
-                Selecionar Arquivo
-              </Button>
-            </EmptyContent>
+            {!disabled && (
+              <EmptyContent>
+                <Button variant="outline" type="button" disabled={isLoading}>
+                  {isLoading && <Spinner className="mr-2" />}
+                  Selecionar Arquivo
+                </Button>
+              </EmptyContent>
+            )}
           </Empty>
         )}
       </div>

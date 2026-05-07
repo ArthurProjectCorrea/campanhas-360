@@ -35,12 +35,19 @@ interface OrganizationProfileFormProps {
     parties: { id: number; name: string }[]
     municipalities: { id: number; name: string }[]
   }
+  canUpdate?: boolean
 }
 
 const initialState: ActionState = {}
 
-export function OrganizationProfileForm({ initialData, lookups }: OrganizationProfileFormProps) {
+export function OrganizationProfileForm({
+  initialData,
+  lookups,
+  canUpdate = true,
+}: OrganizationProfileFormProps) {
   const router = useRouter()
+  const formRef = React.useRef<HTMLFormElement>(null)
+  const [resetKey, setResetKey] = React.useState(0)
   const [state, formAction, isPending] = useActionState(updateOrganizationAction, initialState)
 
   useEffect(() => {
@@ -54,12 +61,18 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
   }, [state])
 
   const handleDiscard = () => {
+    setResetKey(prev => prev + 1)
     router.refresh()
     toast.info('Alterações descartadas.')
   }
 
   return (
-    <form action={formAction} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <form
+      key={resetKey}
+      ref={formRef}
+      action={formAction}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+    >
       {/* Coluna 1: Dados Principais */}
       <Card>
         <CardHeader>
@@ -78,7 +91,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
                 defaultValue={initialData.domain}
                 placeholder="ex: candidato.com.br"
                 required
-                disabled={isPending}
+                disabled={isPending || !canUpdate}
               />
             </Field>
 
@@ -91,7 +104,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
                   type="number"
                   defaultValue={initialData.candidate_number}
                   required
-                  disabled={isPending}
+                  disabled={isPending || !canUpdate}
                 />
               </Field>
               <Field>
@@ -102,7 +115,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
                   type="number"
                   defaultValue={initialData.election_year}
                   required
-                  disabled={isPending}
+                  disabled={isPending || !canUpdate}
                 />
               </Field>
             </div>
@@ -112,7 +125,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
               <Select
                 name="position_id"
                 defaultValue={initialData.position_id.toString()}
-                disabled={isPending}
+                disabled={isPending || !canUpdate}
               >
                 <SelectTrigger id="position_id">
                   <SelectValue placeholder="Selecione o cargo" />
@@ -132,7 +145,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
               <Select
                 name="party_id"
                 defaultValue={initialData.party_id.toString()}
-                disabled={isPending}
+                disabled={isPending || !canUpdate}
               >
                 <SelectTrigger id="party_id">
                   <SelectValue placeholder="Selecione o partido" />
@@ -152,7 +165,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
               <Select
                 name="municipality_id"
                 defaultValue={initialData.municipality_id.toString()}
-                disabled={isPending}
+                disabled={isPending || !canUpdate}
               >
                 <SelectTrigger id="municipality_id">
                   <SelectValue placeholder="Selecione a unidade" />
@@ -168,21 +181,23 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
             </Field>
           </FieldGroup>
         </CardContent>
-        <CardFooter className="flex justify-end gap-3 border-t px-6 py-4">
-          <Button type="button" variant="outline" onClick={handleDiscard} disabled={isPending}>
-            Descartar
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Spinner className="mr-2" />
-                Salvando...
-              </>
-            ) : (
-              'Salvar Alterações'
-            )}
-          </Button>
-        </CardFooter>
+        {canUpdate && (
+          <CardFooter className="flex justify-end gap-3 border-t px-6 py-4">
+            <Button type="button" variant="outline" onClick={handleDiscard} disabled={isPending}>
+              Descartar
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Alterações'
+              )}
+            </Button>
+          </CardFooter>
+        )}
       </Card>
 
       {/* Coluna 2: Upload de Identidade Visual */}
@@ -203,6 +218,7 @@ export function OrganizationProfileForm({ initialData, lookups }: OrganizationPr
                 defaultValue={initialData.avatar_url}
                 maxSize={2}
                 accept="image/*"
+                disabled={isPending || !canUpdate}
               />
             </Field>
           </FieldGroup>

@@ -3,5 +3,10 @@
     "id": 1,
     "key": "view",
     "name": "Visualizar"
+  },
+  {
+    "id": 2,
+    "key": "update",
+    "name": "Atualizar"
   }
 ]

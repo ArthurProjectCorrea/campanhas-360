@@ -60,6 +60,7 @@ Para a transição do protótipo para o produto final, a API deverá assumir as 
 
 ### 5.1. Componentes Customizados
 - **InputPassword**: Componente premium com toggle de visibilidade e desativação de funções nativas de "revelar senha" do navegador para manter consistência visual.
+- **Spinner**: Feedback visual de carregamento integrado aos botões de submissão para evitar múltiplos cliques e melhorar a percepção de performance.
 - **Feedback**: Uso de **Sonner** para notificações instantâneas e discretas.
 - **Acessibilidade**: Uso de classes `sr-only` para labels e suporte total a navegação via teclado.
 

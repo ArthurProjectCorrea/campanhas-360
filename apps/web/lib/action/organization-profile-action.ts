@@ -58,9 +58,14 @@ export async function getOrganizationData() {
 
   const screen = (screens as Screen[]).find(s => s.key === 'organization_profile')
 
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
+  )
+
   return {
     client: clientWithCandidateData,
     screen,
+    canUpdate,
     lookups: {
       positions: positions as { id: number; name: string }[],
       parties: parties as { id: number; name: string }[],
@@ -80,6 +85,15 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionStat
 
   const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
   if (!user) return { success: false, message: 'Usuário não encontrado.' }
+
+  // Verificação de permissão de atualização
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
+  )
+
+  if (!canUpdate) {
+    return { success: false, message: 'Você não tem permissão para realizar esta ação.' }
+  }
 
   const avatarFile = formData.get('avatar') as File | null
   const isRemoval = formData.get('avatar_remove') === 'true'
@@ -165,6 +179,15 @@ export async function updateOrganizationAction(
 
   const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
   if (!user) return { success: false, message: 'Usuário não encontrado.' }
+
+  // Verificação de permissão de atualização
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
+  )
+
+  if (!canUpdate) {
+    return { success: false, message: 'Você não tem permissão para realizar esta ação.' }
+  }
 
   const domain = formData.get('domain') as string
   const candidateNumber = Number(formData.get('candidate_number'))

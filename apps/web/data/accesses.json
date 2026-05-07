@@ -8,5 +8,10 @@
     "access_profile_id": 1,
     "permission_id": 1,
     "screen_id": 3
+  },
+  {
+    "access_profile_id": 1,
+    "permission_id": 2,
+    "screen_id": 3
   }
 ]

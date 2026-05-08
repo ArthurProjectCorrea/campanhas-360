@@ -18,7 +18,7 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
     },
     {
       key: 'regional_planning',
-      url: `/${domain}/regional_planning`,
+      url: `/${domain}/regional-planning`,
     },
     {
       name: 'Configurações',

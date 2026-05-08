@@ -5,45 +5,52 @@ import { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from '@/components/custom/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
-import { AccessProfile, UserRegistration } from '@/types'
+import { Campaign, Candidate } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Pencil, Trash2, Eye, Plus } from 'lucide-react'
+import { Pencil, Trash2, Plus, Eye } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { UserRegistrationForm } from '@/components/forms/user-registration-form'
-import { deleteUserAction } from '@/lib/action/user-registration-action'
+import { OrganizationProfileCampaignForm } from '@/components/forms/organization-profile-campaign-form'
+import { deleteCampaignAction } from '@/lib/action/organization-profile-action'
 import { toast } from 'sonner'
 import { DataTableDeleteDialog } from '@/components/custom/data-table/data-table-delete-dialog'
-
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-interface UserRegistrationTableProps {
-  data: UserRegistration[]
+interface OrganizationProfileTableProps {
+  data: Campaign[]
+  lookups: {
+    positions: { id: number; name: string }[]
+    parties: { id: number; name: string }[]
+    municipalities: { id: number; name: string }[]
+    candidates: Candidate[]
+  }
+  canCreate?: boolean
   canUpdate?: boolean
   canDelete?: boolean
-  canCreate?: boolean
-  accessProfiles: AccessProfile[]
 }
 
-export function UserRegistrationTable({
+export function OrganizationProfileTable({
   data,
+  lookups,
+  canCreate = false,
   canUpdate = false,
   canDelete = false,
-  canCreate = false,
-  accessProfiles,
-}: UserRegistrationTableProps) {
-  const [currentUser, setCurrentUser] = React.useState<UserRegistration | null>(null)
-  const [dialogMode, setDialogMode] = React.useState<'edit' | 'view'>('view')
+}: OrganizationProfileTableProps) {
+  const [currentCampaign, setCurrentCampaign] = React.useState<Campaign | null>(null)
+  const [dialogMode, setDialogMode] = React.useState<'update' | 'view'>('view')
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false)
   const [isEditViewDialogOpen, setIsEditViewDialogOpen] = React.useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
 
-  const [userToDelete, setUserToDelete] = React.useState<UserRegistration | null>(null)
+  const [campaignToDelete, setCampaignToDelete] = React.useState<Campaign | null>(null)
 
   const handleDelete = async () => {
-    if (!userToDelete) return
+    if (!campaignToDelete) return
 
-    const result = await deleteUserAction(userToDelete.id)
+    const formData = new FormData()
+    formData.append('id', campaignToDelete.id.toString())
+
+    const result = await deleteCampaignAction(formData)
     if (result.success) {
       toast.success(result.message)
       setIsDeleteDialogOpen(false)
@@ -52,27 +59,45 @@ export function UserRegistrationTable({
     }
   }
 
-  const columns = React.useMemo<ColumnDef<UserRegistration>[]>(
+  const columns = React.useMemo<ColumnDef<Campaign>[]>(
     () => [
       {
-        accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Nome" />,
+        id: 'candidate_name',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Candidato" />,
+        accessorFn: row =>
+          lookups.candidates.find(c => c.id === row.candidate_id)?.ballot_name || 'Desconhecido',
         meta: {
-          title: 'Nome',
+          title: 'Candidato',
         },
       },
       {
-        accessorKey: 'email',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
+        accessorKey: 'candidate_number',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
         meta: {
-          title: 'Email',
+          title: 'Número',
         },
       },
       {
-        accessorKey: 'access_profile_name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Perfil de Acesso" />,
+        accessorKey: 'election_year',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Ano" />,
         meta: {
-          title: 'Perfil de Acesso',
+          title: 'Ano',
+        },
+      },
+      {
+        id: 'position',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" />,
+        accessorFn: row => lookups.positions.find(p => p.id === row.position_id)?.name || '-',
+        meta: {
+          title: 'Cargo',
+        },
+      },
+      {
+        id: 'party',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Partido" />,
+        accessorFn: row => lookups.parties.find(p => p.id === row.party_id)?.name || '-',
+        meta: {
+          title: 'Partido',
         },
       },
       {
@@ -82,7 +107,7 @@ export function UserRegistrationTable({
           const isActive = row.getValue('is_active') as boolean
           return (
             <Badge variant={isActive ? 'default' : 'secondary'}>
-              {isActive ? 'Ativo' : 'Inativo'}
+              {isActive ? 'Ativa' : 'Inativa'}
             </Badge>
           )
         },
@@ -91,39 +116,14 @@ export function UserRegistrationTable({
         },
       },
       {
-        accessorKey: 'created_at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Criado em" />,
-        cell: ({ row }) => {
-          const dateString = row.getValue('created_at') as string
-          if (!dateString) return '-'
-          const date = new Date(dateString)
-
-          const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          }).format(date)
-
-          const formattedTime = new Intl.DateTimeFormat('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }).format(date)
-
-          return `${formattedDate} - ${formattedTime}`
-        },
-        meta: {
-          title: 'Criado em',
-        },
-      },
-      {
         id: 'actions',
         header: 'Ações',
         cell: ({ row }) => {
-          const user = row.original
+          const campaign = row.original
 
           return (
             <div className="flex items-center justify-end gap-2">
-              {!canUpdate && (
+              {(!canUpdate || !campaign.is_active) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -131,7 +131,7 @@ export function UserRegistrationTable({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        setCurrentUser(user)
+                        setCurrentCampaign(campaign)
                         setDialogMode('view')
                         setIsEditViewDialogOpen(true)
                       }}
@@ -140,10 +140,10 @@ export function UserRegistrationTable({
                       <span className="sr-only">Visualizar</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Visualizar</TooltipContent>
+                  <TooltipContent>Visualizar (Somente leitura)</TooltipContent>
                 </Tooltip>
               )}
-              {canUpdate && (
+              {canUpdate && campaign.is_active && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -151,8 +151,8 @@ export function UserRegistrationTable({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        setCurrentUser(user)
-                        setDialogMode('edit')
+                        setCurrentCampaign(campaign)
+                        setDialogMode('update')
                         setIsEditViewDialogOpen(true)
                       }}
                     >
@@ -171,7 +171,7 @@ export function UserRegistrationTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => {
-                        setUserToDelete(user)
+                        setCampaignToDelete(campaign)
                         setIsDeleteDialogOpen(true)
                       }}
                     >
@@ -187,7 +187,7 @@ export function UserRegistrationTable({
         },
       },
     ],
-    [canUpdate, canDelete],
+    [canUpdate, canDelete, lookups],
   )
 
   return (
@@ -195,13 +195,12 @@ export function UserRegistrationTable({
       <DataTable
         columns={columns}
         data={data}
-        searchKey="name"
         toolbar={
           canCreate && (
             <Button
               size="sm"
               onClick={() => {
-                setCurrentUser(null)
+                setCurrentCampaign(null)
                 setIsCreateDialogOpen(true)
               }}
             >
@@ -214,12 +213,12 @@ export function UserRegistrationTable({
 
       {/* Dialog para Criação */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Novo Usuário</DialogTitle>
+            <DialogTitle>Nova Campanha</DialogTitle>
           </DialogHeader>
-          <UserRegistrationForm
-            accessProfiles={accessProfiles}
+          <OrganizationProfileCampaignForm
+            lookups={lookups}
             mode="create"
             onSuccess={() => setIsCreateDialogOpen(false)}
           />
@@ -228,32 +227,34 @@ export function UserRegistrationTable({
 
       {/* Dialog para Edição/Visualização */}
       <Dialog open={isEditViewDialogOpen} onOpenChange={setIsEditViewDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === 'edit' ? 'Editar Usuário' : 'Visualizar Usuário'}
+              {dialogMode === 'update' ? 'Editar Campanha' : 'Visualizar Campanha'}
             </DialogTitle>
           </DialogHeader>
-          {currentUser && (
-            <UserRegistrationForm
-              initialData={currentUser}
-              accessProfiles={accessProfiles}
-              disabled={dialogMode === 'view'}
+          {currentCampaign && (
+            <OrganizationProfileCampaignForm
+              initialData={currentCampaign}
+              lookups={lookups}
               mode={dialogMode}
+              disabled={dialogMode === 'view'}
               onSuccess={() => setIsEditViewDialogOpen(false)}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Reutilizável de Deleção */}
+      {/* Dialog de Deleção */}
       <DataTableDeleteDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDelete}
-        itemName={userToDelete?.name}
-        title="Excluir usuário?"
-        description="Esta ação removerá o acesso do usuário ao sistema."
+        itemName={`a campanha de ${
+          lookups.candidates.find(c => c.id === campaignToDelete?.candidate_id)?.ballot_name || ''
+        }`}
+        title="Excluir campanha?"
+        description="Esta ação removerá permanentemente o registro da campanha."
       />
     </>
   )

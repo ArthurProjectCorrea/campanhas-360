@@ -127,15 +127,15 @@ export function InputUpload({
         />
 
         {preview || file ? (
-          <div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-4 bg-muted/30">
+          <div className="relative flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-3 bg-muted/30">
             {preview ? (
               <div className="w-full overflow-hidden rounded-lg border bg-background">
                 <Image
                   src={preview}
                   alt="Preview"
-                  width={400}
-                  height={400}
-                  className="w-full h-auto object-contain max-h-[400px]"
+                  width={300}
+                  height={200}
+                  className="w-full h-auto object-contain max-h-[200px]"
                   unoptimized
                 />
               </div>

@@ -95,6 +95,22 @@ export async function updateAccessProfile(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  const payload = await decrypt(session)
+
+  if (!payload || !payload.userId) {
+    return { success: false, message: 'Sessão expirada.' }
+  }
+
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'update',
+  )
+
+  if (!canUpdate) {
+    return { success: false, message: 'Sem permissão para atualizar perfis.' }
+  }
+
   const id = formData.get('id') as string
   const name = formData.get('name') as string
   const isActive = formData.get('is_active') === 'on'
@@ -162,6 +178,14 @@ export async function createAccessProfile(
     return { success: false, message: 'Sessão expirada.' }
   }
 
+  const canCreate = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'create',
+  )
+
+  if (!canCreate) {
+    return { success: false, message: 'Sem permissão para criar perfis.' }
+  }
+
   const name = formData.get('name') as string
   const isActive = formData.get('is_active') === 'on'
   const permissionsData = formData.get('permissions') as string
@@ -216,6 +240,22 @@ export async function createAccessProfile(
 }
 
 export async function deleteAccessProfile(id: string | number): Promise<ActionState> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  const payload = await decrypt(session)
+
+  if (!payload || !payload.userId) {
+    return { success: false, message: 'Sessão expirada.' }
+  }
+
+  const canDelete = payload.accessProfile?.accesses?.some(
+    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'delete',
+  )
+
+  if (!canDelete) {
+    return { success: false, message: 'Sem permissão para excluir perfis.' }
+  }
+
   try {
     const allProfiles = [...(accessProfiles as AccessProfile[])]
     const index = allProfiles.findIndex(p => p.id.toString() === id.toString())

@@ -70,5 +70,17 @@
     "created_at": "2026-05-08T12:25:06.865Z",
     "updated_at": "2026-05-08T17:14:01.453Z",
     "deleted_at": null
+  },
+  {
+    "id": 7,
+    "name": "Teste Feedback",
+    "email": "exemple_90@email.com",
+    "password": "t4hdbfip",
+    "client_id": 1,
+    "is_active": true,
+    "access_profile_id": 2,
+    "created_at": "2026-05-08T21:08:05.827Z",
+    "updated_at": "2026-05-08T21:08:05.827Z",
+    "deleted_at": null
   }
 ]

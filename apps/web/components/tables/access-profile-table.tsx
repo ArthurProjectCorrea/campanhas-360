@@ -9,7 +9,7 @@ import { AccessProfile } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Pencil, Trash2, Eye, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DataTableDeleteDialog } from '@/components/custom/data-table/data-table-delete-dialog'
 import { deleteAccessProfile } from '@/lib/action/access-profile-action'
 import { toast } from 'sonner'
@@ -171,7 +171,7 @@ export function AccessProfileTable({
   )
 
   return (
-    <TooltipProvider>
+    <>
       <DataTable
         columns={columns}
         data={data}
@@ -192,6 +192,6 @@ export function AccessProfileTable({
         itemName={profileToDelete?.name}
         isPending={isDeletePending}
       />
-    </TooltipProvider>
+    </>
   )
 }

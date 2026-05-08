@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   toolbar?: React.ReactNode
+  className?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +45,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   toolbar,
+  className,
 }: DataTableProps<TData, TValue>) {
   const router = useRouter()
   const [isReloading, setIsReloading] = React.useState(false)
@@ -80,19 +82,19 @@ export function DataTable<TData, TValue>({
   })
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {searchKey && (
-          <Input
-            placeholder={`Filtrar por ${searchKey}...`}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-            onChange={event => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
-            className="max-w-sm h-8"
-          />
-        )}
-        <div className="flex-1" />
+    <TooltipProvider>
+      <div className={cn('space-y-4', className)}>
+        <div className="flex items-center gap-2">
+          {searchKey && (
+            <Input
+              placeholder={`Filtrar por ${searchKey}...`}
+              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
+              onChange={event => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
+              className="max-w-sm h-8"
+            />
+          )}
+          <div className="flex-1" />
 
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -108,74 +110,74 @@ export function DataTable<TData, TValue>({
             </TooltipTrigger>
             <TooltipContent>Recarregar</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
 
-        <DataTableViewOptions table={table} />
-        {toolbar}
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      style={{
-                        width: header.id === 'actions' ? '100px' : header.getSize(),
-                        minWidth: header.id === 'actions' ? '100px' : undefined,
-                      }}
-                      className={cn(header.id === 'actions' && 'text-right')}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isReloading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-6 w-full" />
-                    </TableCell>
-                  ))}
+          <DataTableViewOptions table={table} />
+          {toolbar}
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map(headerGroup => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map(header => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        style={{
+                          width: header.id === 'actions' ? '100px' : header.getSize(),
+                          minWidth: header.id === 'actions' ? '100px' : undefined,
+                        }}
+                        className={cn(header.id === 'actions' && 'text-right')}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell
-                      key={cell.id}
-                      style={{
-                        width: cell.column.id === 'actions' ? '100px' : cell.column.getSize(),
-                        minWidth: cell.column.id === 'actions' ? '100px' : undefined,
-                      }}
-                      className={cn(cell.column.id === 'actions' && 'text-right')}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isReloading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {columns.map((_, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-6 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map(row => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    {row.getVisibleCells().map(cell => (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          width: cell.column.id === 'actions' ? '100px' : cell.column.getSize(),
+                          minWidth: cell.column.id === 'actions' ? '100px' : undefined,
+                        }}
+                        className={cn(cell.column.id === 'actions' && 'text-right')}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Nenhum resultado encontrado.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Nenhum resultado encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <DataTablePagination table={table} />
       </div>
-      <DataTablePagination table={table} />
-    </div>
+    </TooltipProvider>
   )
 }

@@ -10,8 +10,9 @@ import parties from '@/data/party.json'
 import municipalities from '@/data/municipalities.json'
 import states from '@/data/states.json'
 import screens from '@/data/screens.json'
+import campaigns from '@/data/campaigns.json'
 import { getNavMain } from '@/lib/sidebar'
-import { User, Client, Candidate, Position, SidebarData, Screen } from '@/types'
+import { User, Client, Candidate, Position, SidebarData, Screen, Campaign } from '@/types'
 
 export async function getSidebarData(): Promise<SidebarData | null> {
   const cookieStore = await cookies()
@@ -28,18 +29,25 @@ export async function getSidebarData(): Promise<SidebarData | null> {
   const client = (clients as Client[]).find(c => c.id.toString() === user.client_id.toString())
   if (!client) return null
 
+  // Busca a campanha ativa para obter os dados do candidato e da eleição
+  const activeCampaign = (campaigns as Campaign[]).find(
+    c => c.client_id.toString() === user.client_id.toString() && c.is_active && !c.deleted_at,
+  )
+
+  if (!activeCampaign) return null
+
   const candidate = (candidates as Candidate[]).find(
-    c => c.id.toString() === client.candidate_id.toString(),
+    c => c.id.toString() === activeCampaign.candidate_id.toString(),
   )
   const position = (positions as Position[]).find(
-    p => p.id.toString() === client.position_id.toString(),
+    p => p.id.toString() === activeCampaign.position_id.toString(),
   )
   const party = (parties as { id: number | string; name: string; slug: string }[]).find(
-    p => p.id.toString() === client.party_id.toString(),
+    p => p.id.toString() === activeCampaign.party_id.toString(),
   )
   const municipality = (
     municipalities as { id: number | string; name: string; tse_name: string }[]
-  ).find(m => m.id.toString() === client.municipality_id.toString())
+  ).find(m => m.id.toString() === activeCampaign.municipality_id.toString())
 
   // O estado é identificado pelos dois primeiros dígitos do ID do município (código IBGE)
   const stateId = municipality?.id.toString().substring(0, 2)
@@ -65,8 +73,8 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     ballot_name: candidate?.ballot_name || 'Candidato',
     position_name: position?.name || 'Cargo',
     avatar_url: candidate?.avatar_url || '',
-    candidate_number: client.candidate_number,
-    election_year: client.election_year,
+    candidate_number: activeCampaign.candidate_number,
+    election_year: activeCampaign.election_year,
     party_name: party?.name || '',
     party_slug: party?.slug || '',
     municipality_name: municipalityDisplay,

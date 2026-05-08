@@ -6,9 +6,19 @@ import accessProfiles from '@/data/access-profile.json'
 import accesses from '@/data/accesses.json'
 import permissions from '@/data/permissions.json'
 import screens from '@/data/screens.json'
+import campaigns from '@/data/campaigns.json'
 import { createSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
-import { ActionState, User, Client, AccessProfile, Access, Permission, Screen } from '@/types'
+import {
+  ActionState,
+  User,
+  Client,
+  AccessProfile,
+  Access,
+  Permission,
+  Screen,
+  Campaign,
+} from '@/types'
 
 export async function signInAction(
   _prevState: ActionState,
@@ -36,8 +46,12 @@ export async function signInAction(
     const client = (clients as Client[]).find(c => c.id === user.client_id)
 
     if (client) {
-      // Validação de conta ativa ou excluída (Usuário e Cliente)
-      // Busca o Perfil de Acesso do usuário
+      // Busca a campanha ativa do cliente
+      const activeCampaign = (campaigns as Campaign[]).find(
+        c => c.client_id === client.id && c.is_active && !c.deleted_at,
+      )
+
+      // Validação de conta ativa ou excluída (Usuário e Cliente) e existência de campanha ativa
       const accessProfileId =
         typeof user.access_profile_id === 'number'
           ? user.access_profile_id
@@ -45,19 +59,19 @@ export async function signInAction(
 
       const profile = (accessProfiles as AccessProfile[]).find(p => p.id === accessProfileId)
 
-      // Validação de conta ativa ou excluída (Usuário, Cliente e Perfil)
       if (
         !user.is_active ||
         user.deleted_at ||
         !client.is_active ||
         client.deleted_at ||
+        !activeCampaign ||
         !profile ||
         !profile.is_active ||
         profile.deleted_at
       ) {
         return {
           success: false,
-          message: 'Acesso negado. Entre em contato com o suporte.',
+          message: 'Acesso negado. Sua organização não possui uma campanha ativa.',
         }
       }
 

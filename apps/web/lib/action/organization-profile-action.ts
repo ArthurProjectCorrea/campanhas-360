@@ -11,15 +11,16 @@ import parties from '@/data/party.json'
 import municipalities from '@/data/municipalities.json'
 import screens from '@/data/screens.json'
 import candidates from '@/data/candidates.json'
-import { User, Client, ActionState, Screen, Access, Candidate } from '@/types'
+import campaigns from '@/data/campaigns.json'
+import { User, Client, ActionState, Screen, Access, Candidate, Campaign } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { forbidden } from 'next/navigation'
 
 const CLIENTS_FILE_PATH = path.join(process.cwd(), 'data/clients.json')
 const CANDIDATES_FILE_PATH = path.join(process.cwd(), 'data/candidates.json')
+const CAMPAIGNS_FILE_PATH = path.join(process.cwd(), 'data/campaigns.json')
 
 export async function getOrganizationData() {
-  console.log('DEBUG: getOrganizationData starting')
   const cookieStore = await cookies()
   const session = cookieStore.get('session')?.value
   const payload = await decrypt(session)
@@ -28,7 +29,7 @@ export async function getOrganizationData() {
     return null
   }
 
-  // Verificação de permissão
+  // Verificação de permissão view
   const hasViewPermission = payload.accessProfile?.accesses?.some(
     (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'view',
   )
@@ -41,35 +42,61 @@ export async function getOrganizationData() {
   if (!user) return null
 
   const client = (clients as Client[]).find(c => c.id === user.client_id)
-  if (!client) {
-    console.log('DEBUG: Client not found')
-    return null
+  if (!client) return null
+
+  // Busca os dados das campanhas vinculadas ao cliente
+  const clientCampaigns = (campaigns as Campaign[])
+    .filter(c => c.client_id === user.client_id && !c.deleted_at)
+    .sort((a, b) => {
+      if (a.is_active && !b.is_active) return -1
+      if (!a.is_active && b.is_active) return 1
+      return b.id - a.id
+    })
+
+  // Busca o avatar do candidato da campanha ativa para o form de perfil
+  const activeCampaign = clientCampaigns.find(c => c.is_active)
+  let avatar_url = ''
+  if (activeCampaign) {
+    const candidate = (candidates as Candidate[]).find(c => c.id === activeCampaign.candidate_id)
+    avatar_url = candidate?.avatar_url || ''
   }
 
-  // Busca os dados do candidato para pegar o avatar_url correto
-  const candidate = (candidates as Candidate[]).find(c => c.id === client.candidate_id)
-
-  const clientWithCandidateData = {
+  const clientWithAvatar = {
     ...client,
-    avatar_url: candidate?.avatar_url || '',
+    avatar_url,
   }
 
-  console.log('DEBUG: Client found', client.domain)
+  // Permissões específicas (Verifica por key ou por ID como fallback)
+  const canCreate = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'create' || a.permission_id === 4),
+  )
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'update' || a.permission_id === 2),
+  )
+  const canDelete = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'delete' || a.permission_id === 3),
+  )
 
   const screen = (screens as Screen[]).find(s => s.key === 'organization_profile')
 
-  const canUpdate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
-  )
-
   return {
-    client: clientWithCandidateData,
+    client: clientWithAvatar,
+    campaigns: clientCampaigns,
     screen,
+    canCreate,
     canUpdate,
+    canDelete,
     lookups: {
       positions: positions as { id: number; name: string }[],
       parties: parties as { id: number; name: string }[],
       municipalities: municipalities as { id: number; name: string }[],
+      candidates: candidates as Candidate[],
     },
   }
 }
@@ -86,7 +113,6 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionStat
   const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
   if (!user) return { success: false, message: 'Usuário não encontrado.' }
 
-  // Verificação de permissão de atualização
   const canUpdate = payload.accessProfile?.accesses?.some(
     (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
   )
@@ -99,43 +125,36 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionStat
   const isRemoval = formData.get('avatar_remove') === 'true'
 
   try {
-    const allClients = [...(clients as Client[])]
-    const index = allClients.findIndex(c => c.id === user.client_id)
+    const activeCampaign = (campaigns as Campaign[]).find(
+      c => c.client_id === user.client_id && c.is_active && !c.deleted_at,
+    )
 
-    if (index === -1) {
-      return { success: false, message: 'Organização não encontrada.' }
+    if (!activeCampaign) {
+      return { success: false, message: 'Nenhuma campanha ativa encontrada para vincular a foto.' }
     }
 
-    const currentClient = allClients[index]
-    let avatarUrl = ''
-
-    // Busca o arquivo de candidatos
     const allCandidates = [...(candidates as Candidate[])]
-    const candidateIndex = allCandidates.findIndex(c => c.id === currentClient.candidate_id)
+    const candidateIndex = allCandidates.findIndex(c => c.id === activeCampaign.candidate_id)
 
     if (candidateIndex === -1) {
       return { success: false, message: 'Candidato não encontrado.' }
     }
 
     const currentCandidate = allCandidates[candidateIndex]
-    avatarUrl = currentCandidate.avatar_url || ''
+    let avatarUrl = currentCandidate.avatar_url || ''
 
-    // Lógica de remoção física do arquivo atual
     if (currentCandidate.avatar_url) {
       const oldPath = path.join(process.cwd(), 'public', currentCandidate.avatar_url)
       try {
         await fs.unlink(oldPath)
-      } catch {
-        // Ignora se o arquivo não existir
-      }
+      } catch {}
     }
 
     if (isRemoval) {
       avatarUrl = ''
     } else if (avatarFile && avatarFile.size > 0) {
       const ext = path.extname(avatarFile.name) || '.jpg'
-      // Nome previsível e limpo usando o ID do candidato
-      const fileName = `avatar-${currentCandidate.id}${ext}`
+      const fileName = `avatar-${currentCandidate.id}-${Date.now()}${ext}`
       const storageDir = path.join(process.cwd(), 'public/storage')
       const filePath = path.join(storageDir, fileName)
 
@@ -144,14 +163,12 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionStat
       avatarUrl = `/storage/${fileName}`
     }
 
-    // Atualiza o candidato imediatamente
     allCandidates[candidateIndex] = {
       ...currentCandidate,
       avatar_url: avatarUrl,
     }
 
     await fs.writeFile(CANDIDATES_FILE_PATH, JSON.stringify(allCandidates, null, 2))
-
     revalidatePath('/')
 
     return {
@@ -160,7 +177,7 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionStat
       data: { avatar_url: avatarUrl },
     }
   } catch (error) {
-    console.error('Erro no upload imediato:', error)
+    console.error('Erro no upload:', error)
     return { success: false, message: 'Erro ao processar o upload.' }
   }
 }
@@ -180,56 +197,229 @@ export async function updateOrganizationAction(
   const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
   if (!user) return { success: false, message: 'Usuário não encontrado.' }
 
-  // Verificação de permissão de atualização
   const canUpdate = payload.accessProfile?.accesses?.some(
     (a: Access) => a.screen_key === 'organization_profile' && a.permission_key === 'update',
   )
 
   if (!canUpdate) {
-    return { success: false, message: 'Você não tem permissão para realizar esta ação.' }
+    return { success: false, message: 'Sem permissão.' }
   }
 
   const domain = formData.get('domain') as string
-  const candidateNumber = Number(formData.get('candidate_number'))
-  const electionYear = Number(formData.get('election_year'))
-  const positionId = Number(formData.get('position_id'))
-  const partyId = Number(formData.get('party_id'))
-  const municipalityId = Number(formData.get('municipality_id'))
 
-  // Validação simples
-  if (!domain || !candidateNumber || !electionYear || !positionId || !partyId || !municipalityId) {
-    return { success: false, message: 'Preencha todos os campos obrigatórios.' }
+  if (!domain) {
+    return { success: false, message: 'Domínio é obrigatório.' }
   }
 
   try {
     const allClients = [...(clients as Client[])]
     const index = allClients.findIndex(c => c.id === user.client_id)
 
-    if (index === -1) {
-      return { success: false, message: 'Organização não encontrada.' }
-    }
+    if (index === -1) return { success: false, message: 'Não encontrado.' }
 
-    const currentClient = allClients[index]
-
-    // Atualiza apenas os campos permitidos (avatar é gerenciado pelo upload imediato agora)
     allClients[index] = {
-      ...currentClient,
+      ...allClients[index],
       domain,
-      candidate_number: candidateNumber,
-      election_year: electionYear,
-      position_id: positionId,
-      party_id: partyId,
-      municipality_id: municipalityId,
       updated_at: new Date().toISOString(),
     }
 
     await fs.writeFile(CLIENTS_FILE_PATH, JSON.stringify(allClients, null, 2))
-
     revalidatePath('/')
-
-    return { success: true, message: 'Dados da organização atualizados com sucesso.' }
+    return { success: true, message: 'Organização atualizada.' }
   } catch (error) {
-    console.error('Erro ao salvar organização:', error)
-    return { success: false, message: 'Erro ao salvar as alterações no banco de dados.' }
+    return { success: false, message: 'Erro ao salvar.' }
+  }
+}
+
+export async function createCampaignAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  const payload = await decrypt(session)
+
+  if (!payload || !payload.userId) return { success: false, message: 'Sessão expirada.' }
+
+  const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
+  if (!user) return { success: false, message: 'Usuário não encontrado.' }
+
+  const canCreate = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'create' || a.permission_id === 4),
+  )
+
+  if (!canCreate) return { success: false, message: 'Sem permissão.' }
+
+  const candidateId = Number(formData.get('candidate_id'))
+  const positionId = Number(formData.get('position_id'))
+  const municipalityId = Number(formData.get('municipality_id'))
+  const partyId = Number(formData.get('party_id'))
+  const candidateNumber = Number(formData.get('candidate_number'))
+  const electionYear = Number(formData.get('election_year'))
+
+  if (
+    !candidateId ||
+    !positionId ||
+    !municipalityId ||
+    !partyId ||
+    !candidateNumber ||
+    !electionYear
+  ) {
+    return { success: false, message: 'Preencha todos os campos obrigatórios.' }
+  }
+
+  try {
+    const allCampaigns = [...(campaigns as Campaign[])]
+    const isActive = formData.get('is_active') === 'on'
+
+    // Se a nova campanha for ativa, inativa campanhas anteriores do mesmo cliente
+    if (isActive) {
+      allCampaigns.forEach((c, i) => {
+        if (c.client_id === user.client_id && c.is_active && !c.deleted_at) {
+          allCampaigns[i].is_active = false
+          allCampaigns[i].updated_at = new Date().toISOString()
+        }
+      })
+    }
+
+    const newCampaign: Campaign = {
+      id: Math.max(...allCampaigns.map(c => c.id), 0) + 1,
+      candidate_id: candidateId,
+      position_id: positionId,
+      municipality_id: municipalityId,
+      party_id: partyId,
+      candidate_number: candidateNumber,
+      election_year: electionYear,
+      legal_spending_limit: Number(formData.get('legal_spending_limit')) / 100,
+      is_active: isActive,
+      client_id: user.client_id as number,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted_at: null,
+    }
+
+    allCampaigns.push(newCampaign)
+    await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
+    revalidatePath('/')
+    return { success: true, message: isActive ? 'Campanha criada e ativada.' : 'Campanha criada.' }
+  } catch (error) {
+    return { success: false, message: 'Erro ao criar.' }
+  }
+}
+
+export async function updateCampaignAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  const payload = await decrypt(session)
+
+  if (!payload || !payload.userId) return { success: false, message: 'Sessão expirada.' }
+
+  const canUpdate = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'update' || a.permission_id === 2),
+  )
+
+  if (!canUpdate) return { success: false, message: 'Sem permissão.' }
+
+  const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
+  if (!user) return { success: false, message: 'Usuário não encontrado.' }
+
+  const id = Number(formData.get('id'))
+  const candidateId = Number(formData.get('candidate_id'))
+  const positionId = Number(formData.get('position_id'))
+  const municipalityId = Number(formData.get('municipality_id'))
+  const partyId = Number(formData.get('party_id'))
+  const candidateNumber = Number(formData.get('candidate_number'))
+  const electionYear = Number(formData.get('election_year'))
+  const legalSpendingLimit = Number(formData.get('legal_spending_limit'))
+  const isActive = formData.get('is_active') === 'on'
+
+  if (
+    !id ||
+    !candidateId ||
+    !positionId ||
+    !municipalityId ||
+    !partyId ||
+    !candidateNumber ||
+    !electionYear ||
+    !legalSpendingLimit
+  ) {
+    return { success: false, message: 'Preencha todos os campos obrigatórios.' }
+  }
+
+  try {
+    const allCampaigns = [...(campaigns as Campaign[])]
+    const index = allCampaigns.findIndex(c => c.id === id)
+
+    if (index === -1) return { success: false, message: 'Não encontrada.' }
+
+    // Se estiver ativando esta campanha, inativa as outras
+    if (isActive && !allCampaigns[index].is_active) {
+      allCampaigns.forEach((c, i) => {
+        if (c.client_id === user.client_id && c.is_active && !c.deleted_at && c.id !== id) {
+          allCampaigns[i].is_active = false
+          allCampaigns[i].updated_at = new Date().toISOString()
+        }
+      })
+    }
+
+    allCampaigns[index] = {
+      ...allCampaigns[index],
+      candidate_id: candidateId,
+      position_id: positionId,
+      municipality_id: municipalityId,
+      party_id: partyId,
+      candidate_number: candidateNumber,
+      election_year: electionYear,
+      legal_spending_limit: Number(formData.get('legal_spending_limit')) / 100,
+      is_active: isActive,
+      updated_at: new Date().toISOString(),
+    }
+
+    await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
+    revalidatePath('/')
+    return { success: true, message: 'Campanha atualizada.' }
+  } catch (error) {
+    return { success: false, message: 'Erro ao salvar.' }
+  }
+}
+
+export async function deleteCampaignAction(formData: FormData): Promise<ActionState> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  const payload = await decrypt(session)
+
+  if (!payload || !payload.userId) return { success: false, message: 'Sessão expirada.' }
+
+  const canDelete = payload.accessProfile?.accesses?.some(
+    (a: Access) =>
+      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
+      (a.permission_key === 'delete' || a.permission_id === 3),
+  )
+
+  if (!canDelete) return { success: false, message: 'Sem permissão.' }
+
+  const id = Number(formData.get('id'))
+
+  try {
+    const allCampaigns = [...(campaigns as Campaign[])]
+    const index = allCampaigns.findIndex(c => c.id === id)
+
+    if (index === -1) return { success: false, message: 'Não encontrada.' }
+
+    allCampaigns[index].deleted_at = new Date().toISOString()
+    allCampaigns[index].is_active = false
+
+    await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
+    revalidatePath('/')
+    return { success: true, message: 'Campanha excluída.' }
+  } catch (error) {
+    return { success: false, message: 'Erro ao excluir.' }
   }
 }

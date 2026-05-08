@@ -100,6 +100,47 @@ export type Position = {
   name: string
 }
 
+export type RegionalPlanning = {
+  id: number
+  name: string
+  goal: number
+  votes: number
+  is_active: boolean
+  campaign_id: number
+  client_id: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type Financial = {
+  id: number
+  is_expense: boolean
+  value: string | number
+  campaign_id: number
+  client_id: number
+  regional_planning_id: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type Campaign = {
+  id: number
+  candidate_id: number
+  position_id: number
+  municipality_id: number
+  party_id: number
+  candidate_number: number
+  election_year: number
+  legal_spending_limit: number
+  is_active: boolean
+  client_id: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
 export type NavMainItem = {
   title: string
   url?: string

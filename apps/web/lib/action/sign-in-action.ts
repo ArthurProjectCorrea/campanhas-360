@@ -37,20 +37,29 @@ export async function signInAction(
 
     if (client) {
       // Validação de conta ativa ou excluída (Usuário e Cliente)
-      if (!user.is_active || user.deleted_at || !client.is_active || client.deleted_at) {
-        return {
-          success: false,
-          message: 'Acesso negado. Entre em contato com o suporte.',
-        }
-      }
-
-      // 1. Busca o Perfil de Acesso do usuário
+      // Busca o Perfil de Acesso do usuário
       const accessProfileId =
         typeof user.access_profile_id === 'number'
           ? user.access_profile_id
           : (user.access_profile_id as AccessProfile).id
 
       const profile = (accessProfiles as AccessProfile[]).find(p => p.id === accessProfileId)
+
+      // Validação de conta ativa ou excluída (Usuário, Cliente e Perfil)
+      if (
+        !user.is_active ||
+        user.deleted_at ||
+        !client.is_active ||
+        client.deleted_at ||
+        !profile ||
+        !profile.is_active ||
+        profile.deleted_at
+      ) {
+        return {
+          success: false,
+          message: 'Acesso negado. Entre em contato com o suporte.',
+        }
+      }
 
       let accessProfileData: AccessProfile | undefined = undefined
 

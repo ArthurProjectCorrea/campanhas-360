@@ -56,7 +56,8 @@ export type AccessProfile = {
   id: number
   name: string
   is_active: boolean
-  accesses: Access[]
+  client_id: number
+  accesses?: Access[]
   created_at?: string
   updated_at?: string
   deleted_at?: string | null
@@ -107,6 +108,7 @@ export type NavMainItem = {
   items?: {
     title: string
     url: string
+    icon?: string
   }[]
 }
 

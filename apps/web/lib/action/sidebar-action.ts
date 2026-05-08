@@ -51,10 +51,11 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     : ''
 
   // 1. Filtra as telas permitidas (view) baseadas no perfil de acesso da sessão
-  const permittedScreens = (screens as Screen[]).filter(screen =>
-    payload.accessProfile?.accesses.some(
-      a => a.screen_key === screen.key && a.permission_key === 'view',
-    ),
+  const permittedScreens = (screens as Screen[]).filter(
+    screen =>
+      payload.accessProfile?.accesses?.some(
+        a => a.screen_key === screen.key && a.permission_key === 'view',
+      ) ?? false,
   )
 
   // 2. Gera o NavMain passando as telas permitidas para o template em sidebar.ts

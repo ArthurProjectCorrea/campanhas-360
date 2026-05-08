@@ -5,74 +5,58 @@ import { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from '@/components/custom/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
-import { AccessProfile, UserRegistration } from '@/types'
+import { AccessProfile } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Pencil, Trash2, Eye, Plus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { UserRegistrationForm } from '@/components/forms/user-registration-form'
-import { deleteUserAction } from '@/lib/action/user-registration-action'
-import { toast } from 'sonner'
-import { DataTableDeleteDialog } from '@/components/custom/data-table/data-table-delete-dialog'
-
+import { useRouter } from 'next/navigation'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { DataTableDeleteDialog } from '@/components/custom/data-table/data-table-delete-dialog'
+import { deleteAccessProfile } from '@/lib/action/access-profile-action'
+import { toast } from 'sonner'
 
-interface UserRegistrationTableProps {
-  data: UserRegistration[]
+interface AccessProfileTableProps {
+  data: AccessProfile[]
   canUpdate?: boolean
   canDelete?: boolean
   canCreate?: boolean
-  accessProfiles: AccessProfile[]
+  domain: string
 }
 
-export function UserRegistrationTable({
+export function AccessProfileTable({
   data,
   canUpdate = false,
   canDelete = false,
   canCreate = false,
-  accessProfiles,
-}: UserRegistrationTableProps) {
-  const [currentUser, setCurrentUser] = React.useState<UserRegistration | null>(null)
-  const [dialogMode, setDialogMode] = React.useState<'edit' | 'view'>('view')
-
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false)
-  const [isEditViewDialogOpen, setIsEditViewDialogOpen] = React.useState(false)
+  domain,
+}: AccessProfileTableProps) {
+  const router = useRouter()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
-
-  const [userToDelete, setUserToDelete] = React.useState<UserRegistration | null>(null)
+  const [profileToDelete, setProfileToDelete] = React.useState<AccessProfile | null>(null)
+  const [isDeletePending, setIsDeletePending] = React.useState(false)
 
   const handleDelete = async () => {
-    if (!userToDelete) return
+    if (!profileToDelete) return
 
-    const result = await deleteUserAction(userToDelete.id)
+    setIsDeletePending(true)
+    const result = await deleteAccessProfile(profileToDelete.id)
+    setIsDeletePending(false)
+
     if (result.success) {
       toast.success(result.message)
       setIsDeleteDialogOpen(false)
+      setProfileToDelete(null)
     } else {
       toast.error(result.message)
     }
   }
 
-  const columns = React.useMemo<ColumnDef<UserRegistration>[]>(
+  const columns = React.useMemo<ColumnDef<AccessProfile>[]>(
     () => [
       {
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nome" />,
         meta: {
           title: 'Nome',
-        },
-      },
-      {
-        accessorKey: 'email',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-        meta: {
-          title: 'Email',
-        },
-      },
-      {
-        accessorKey: 'access_profile_name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Perfil de Acesso" />,
-        meta: {
-          title: 'Perfil de Acesso',
         },
       },
       {
@@ -119,7 +103,7 @@ export function UserRegistrationTable({
         id: 'actions',
         header: 'Ações',
         cell: ({ row }) => {
-          const user = row.original
+          const profile = row.original
 
           return (
             <div className="flex items-center justify-end gap-2">
@@ -130,11 +114,9 @@ export function UserRegistrationTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => {
-                        setCurrentUser(user)
-                        setDialogMode('view')
-                        setIsEditViewDialogOpen(true)
-                      }}
+                      onClick={() =>
+                        router.push(`/${domain}/settings/access-profile/${profile.id}`)
+                      }
                     >
                       <Eye className="h-4 w-4" />
                       <span className="sr-only">Visualizar</span>
@@ -150,11 +132,9 @@ export function UserRegistrationTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => {
-                        setCurrentUser(user)
-                        setDialogMode('edit')
-                        setIsEditViewDialogOpen(true)
-                      }}
+                      onClick={() =>
+                        router.push(`/${domain}/settings/access-profile/${profile.id}`)
+                      }
                     >
                       <Pencil className="h-4 w-4" />
                       <span className="sr-only">Editar</span>
@@ -171,7 +151,7 @@ export function UserRegistrationTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => {
-                        setUserToDelete(user)
+                        setProfileToDelete(profile)
                         setIsDeleteDialogOpen(true)
                       }}
                     >
@@ -187,7 +167,7 @@ export function UserRegistrationTable({
         },
       },
     ],
-    [canUpdate, canDelete],
+    [canUpdate, canDelete, domain, router],
   )
 
   return (
@@ -198,62 +178,19 @@ export function UserRegistrationTable({
         searchKey="name"
         toolbar={
           canCreate && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setCurrentUser(null)
-                setIsCreateDialogOpen(true)
-              }}
-            >
+            <Button size="sm" onClick={() => router.push(`/${domain}/settings/access-profile/new`)}>
               <Plus className="mr-2 h-4 w-4" />
-              Novo Registro
+              Novo Perfil
             </Button>
           )
         }
       />
-
-      {/* Dialog para Criação */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo Usuário</DialogTitle>
-          </DialogHeader>
-          <UserRegistrationForm
-            accessProfiles={accessProfiles}
-            mode="create"
-            onSuccess={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para Edição/Visualização */}
-      <Dialog open={isEditViewDialogOpen} onOpenChange={setIsEditViewDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {dialogMode === 'edit' ? 'Editar Usuário' : 'Visualizar Usuário'}
-            </DialogTitle>
-          </DialogHeader>
-          {currentUser && (
-            <UserRegistrationForm
-              initialData={currentUser}
-              accessProfiles={accessProfiles}
-              disabled={dialogMode === 'view'}
-              mode={dialogMode}
-              onSuccess={() => setIsEditViewDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Reutilizável de Deleção */}
       <DataTableDeleteDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDelete}
-        itemName={userToDelete?.name}
-        title="Excluir usuário?"
-        description="Esta ação removerá o acesso do usuário ao sistema."
+        itemName={profileToDelete?.name}
+        isPending={isDeletePending}
       />
     </TooltipProvider>
   )

@@ -21,7 +21,7 @@
     "title": "Perfil da Organização",
     "description": "Controle de dados da Organização",
     "sidebar": "Organização",
-    "icon": "user-round-pen"
+    "icon": "landmark"
   },
   {
     "id": 4,
@@ -29,6 +29,14 @@
     "title": "Cadastro de Usuários",
     "description": "Cadastro e gerenciamento de usuários",
     "sidebar": "Usuários",
-    "icon": "user-plus"
+    "icon": "users"
+  },
+  {
+    "id": 5,
+    "key": "access_profile",
+    "title": "Perfil de Acesso",
+    "description": "Gerencie as permissões e configurações deste perfil.",
+    "sidebar": "Perfis de Acesso",
+    "icon": "fingerprint-pattern"
   }
 ]

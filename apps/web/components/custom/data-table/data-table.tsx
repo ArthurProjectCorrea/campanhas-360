@@ -120,7 +120,14 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map(header => {
                   return (
-                    <TableHead key={header.id} style={{ width: header.getSize() }}>
+                    <TableHead
+                      key={header.id}
+                      style={{
+                        width: header.id === 'actions' ? '100px' : header.getSize(),
+                        minWidth: header.id === 'actions' ? '100px' : undefined,
+                      }}
+                      className={cn(header.id === 'actions' && 'text-right')}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -145,7 +152,14 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
+                    <TableCell
+                      key={cell.id}
+                      style={{
+                        width: cell.column.id === 'actions' ? '100px' : cell.column.getSize(),
+                        minWidth: cell.column.id === 'actions' ? '100px' : undefined,
+                      }}
+                      className={cn(cell.column.id === 'actions' && 'text-right')}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

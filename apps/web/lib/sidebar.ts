@@ -32,6 +32,10 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
           key: 'user_registration',
           url: `/${domain}/settings/user-registration`,
         },
+        {
+          key: 'access_profile',
+          url: `/${domain}/settings/access-profile`,
+        },
       ],
     },
   ]
@@ -46,9 +50,10 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
           return {
             title: screen.sidebar || screen.title,
             url: sub.url,
+            icon: screen.icon,
           }
         })
-        .filter((sub): sub is { title: string; url: string } => sub !== null)
+        .filter((sub): sub is NonNullable<typeof sub> => sub !== null)
 
       // Se o grupo não tiver nenhum item permitido, oculta o grupo todo
       if (subItems.length === 0) return null

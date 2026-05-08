@@ -19,20 +19,25 @@ import * as Icons from 'lucide-react'
 import { NavMainItem } from '@/types'
 
 export function NavMain({ items }: { items: NavMainItem[] }) {
+  const getIcon = (iconName?: string) => {
+    if (!iconName) return Icons.HelpCircle
+
+    const pascalIconName = iconName
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
+
+    return (
+      (Icons as unknown as Record<string, Icons.LucideIcon>)[pascalIconName] || Icons.HelpCircle
+    )
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item => {
-          // Converte o nome do ícone de kebab-case para PascalCase se necessário
-          const iconName = item.icon
-            ?.split('-')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join('')
-
-          const Icon = iconName
-            ? (Icons as unknown as Record<string, Icons.LucideIcon>)[iconName] || Icons.HelpCircle
-            : Icons.HelpCircle
+          const Icon = getIcon(item.icon)
 
           // Se for um item simples (sem sub-itens)
           if (!item.items || item.items.length === 0) {
@@ -60,13 +65,17 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="start" className="w-48">
-                  {item.items.map(subItem => (
-                    <DropdownMenuItem key={subItem.title} asChild>
-                      <Link href={subItem.url || '#'} className="flex w-full items-center">
-                        <span>{subItem.title}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
+                  {item.items.map(subItem => {
+                    const SubIcon = getIcon(subItem.icon)
+                    return (
+                      <DropdownMenuItem key={subItem.title} asChild>
+                        <Link href={subItem.url || '#'} className="flex w-full items-center gap-2">
+                          <SubIcon className="size-4" />
+                          <span>{subItem.title}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             </SidebarMenuItem>

@@ -17,10 +17,14 @@ import { SidebarData } from '@/types'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [data, setData] = React.useState<SidebarData | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
-    getSidebarData().then(setData)
-  }, [setData])
+    getSidebarData().then(result => {
+      setData(result)
+      setIsLoading(false)
+    })
+  }, [])
 
   const user = data
     ? {
@@ -43,7 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data?.navMain || []} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} isLoading={isLoading} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

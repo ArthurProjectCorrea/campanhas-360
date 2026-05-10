@@ -1,7 +1,8 @@
 [
   {
-    "id": 330002,
-    "name": "Angra dos Reis",
-    "intermediate_region_id": 3301
+    "id": 510001,
+    "name": "Cuiabá",
+    "intermediate_region_id": 5101,
+    "geographical_meshes": []
   }
 ]

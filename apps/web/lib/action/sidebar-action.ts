@@ -42,20 +42,20 @@ export async function getSidebarData(): Promise<SidebarData | null> {
   const position = (positions as Position[]).find(
     p => p.id.toString() === activeCampaign.position_id.toString(),
   )
-  const party = (parties as { id: number | string; name: string; slug: string }[]).find(
+  const party = (parties as { id: number | string; name: string; acronym: string }[]).find(
     p => p.id.toString() === activeCampaign.party_id.toString(),
   )
   const municipality = (
-    municipalities as { id: number | string; name: string; tse_name: string }[]
+    municipalities as { id: number | string; name: string; tse_id: number }[]
   ).find(m => m.id.toString() === activeCampaign.municipality_id.toString())
 
   // O estado é identificado pelos dois primeiros dígitos do ID do município (código IBGE)
   const stateId = municipality?.id.toString().substring(0, 2)
-  const state = (states as { id: number | string; sigla: string }[]).find(
+  const state = (states as { id: number | string; acronym: string }[]).find(
     s => s.id.toString() === stateId,
   )
   const municipalityDisplay = municipality
-    ? `${municipality.name}${state ? `-${state.sigla}` : ''}`
+    ? `${municipality.name}${state ? `-${state.acronym}` : ''}`
     : ''
 
   // 1. Filtra as telas permitidas (view) baseadas no perfil de acesso da sessão
@@ -76,7 +76,7 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     candidate_number: activeCampaign.candidate_number,
     election_year: activeCampaign.election_year,
     party_name: party?.name || '',
-    party_slug: party?.slug || '',
+    party_slug: party?.acronym || '',
     municipality_name: municipalityDisplay,
     user_name: user.name,
     user_email: user.email,

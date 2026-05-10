@@ -166,3 +166,35 @@ export type SidebarData = {
   user_email: string
   navMain: NavMainItem[]
 }
+
+export type CensusTract = {
+  id: string
+  situation: string
+  situation_id: number
+  type_id: number
+  area_km2: number
+  region_id: number
+  region_name: string
+  state_id: number
+  state_name: string
+  municipality_id: number
+  municipality_name: string
+  district_id: number
+  district_name: string
+  subdistrict_id: number
+  subdistrict_name: string
+  neighborhood_id: number | null
+  neighborhood_name: string
+  nu_id: number | null
+  nu_name: string
+  fcu_id: number | null
+  fcu_name: string
+  aglom_id: number | null
+  aglom_name: string
+  intermediate_region_id: number
+  intermediate_region_name: string
+  immediate_region_id: number
+  immediate_region_name: string
+  concurb_id: number | null
+  concurb_name: string
+}

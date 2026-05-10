@@ -42,3 +42,5 @@ yarn-error.log*
 
 # Docker
 # (Dockerfile and docker-compose.yml should be tracked by Git)
+
+.gemini/

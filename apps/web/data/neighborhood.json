@@ -1,0 +1,716 @@
+[
+  {
+    "id": 5103403118,
+    "name": "Alto da Serra I",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403104,
+    "name": "Altos do Coxipó",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403041,
+    "name": "Alvorada",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403009,
+    "name": "Araés",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403007,
+    "name": "Areão",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403016,
+    "name": "Baú",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403006,
+    "name": "Bandeirantes",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403500,
+    "name": "Barbado",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403033,
+    "name": "Barra do Pari",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403048,
+    "name": "Bela Marina",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403064,
+    "name": "Bela Vista",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403044,
+    "name": "Boa Esperança",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403060,
+    "name": "Bosque da Saúde",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403083,
+    "name": "Cachoeira das Garças",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403054,
+    "name": "Campo Velho",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403066,
+    "name": "Campo Verde",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403062,
+    "name": "Canjica",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403067,
+    "name": "Carumbé",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403002,
+    "name": "Centro Norte",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403020,
+    "name": "Centro Político Administrativo",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403001,
+    "name": "Centro Sul",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403097,
+    "name": "Chácara dos Pinheiros",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403014,
+    "name": "Cidade Alta",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403031,
+    "name": "Cidade Verde",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403088,
+    "name": "Cohab São Gonçalo",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403029,
+    "name": "Coophamil",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403095,
+    "name": "Coophema",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403096,
+    "name": "Coxipó",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403040,
+    "name": "Despraiado",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403004,
+    "name": "Dom Aquino",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403065,
+    "name": "Dom Bosco",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403119,
+    "name": "Dr. Fábio Leite I",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403011,
+    "name": "Duque de Caxias",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403012,
+    "name": "Goiabeira",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403051,
+    "name": "Grande Terceiro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403061,
+    "name": "Jardim Aclimação",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403047,
+    "name": "Jardim Califórnia",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403501,
+    "name": "Jardim Campus Elizius",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403102,
+    "name": "Jardim Comodoro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403013,
+    "name": "Jardim Cuiabá",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403057,
+    "name": "Jardim das Américas",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403098,
+    "name": "Jardim das Palmeiras",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403105,
+    "name": "Jardim dos Ipês",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403075,
+    "name": "Jardim Eldorado",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403052,
+    "name": "Jardim Europa",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403022,
+    "name": "Jardim Florianópolis",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403110,
+    "name": "Jardim Fortaleza",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403094,
+    "name": "Jardim Gramado",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403081,
+    "name": "Jardim Imperial",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403115,
+    "name": "Jardim Industriário",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403077,
+    "name": "Jardim Itália",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403058,
+    "name": "Jardim Leblon",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403036,
+    "name": "Jardim Mariana",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403089,
+    "name": "Jardim Mossoró",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403084,
+    "name": "Jardim Passaredo",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403053,
+    "name": "Jardim Paulista",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403046,
+    "name": "Jardim Petrópolis",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403086,
+    "name": "Jardim Presidente",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403045,
+    "name": "Jardim Shangri-lá",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403055,
+    "name": "Jardim Tropical",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403039,
+    "name": "Jardim Ubirajara",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403082,
+    "name": "Jardim Universitário",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403023,
+    "name": "Jardim Vitória",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403107,
+    "name": "Lagoa Azul",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403008,
+    "name": "Lixeira",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403028,
+    "name": "Morada da Serra",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403019,
+    "name": "Morada do Ouro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403078,
+    "name": "Morada dos Nobres",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403101,
+    "name": "Nossa Senhora Aparecida",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403025,
+    "name": "Nova Conquista",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403114,
+    "name": "Nova Esperança",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403037,
+    "name": "Novo Colorado",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403070,
+    "name": "Novo Horizonte",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403069,
+    "name": "Novo Mato Grosso",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403030,
+    "name": "Novo Terceiro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403112,
+    "name": "Osmar Cabral",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403021,
+    "name": "Paiaguás",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403024,
+    "name": "Paraíso",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403091,
+    "name": "Parque Atalaia",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403090,
+    "name": "Parque Cuiabá",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403092,
+    "name": "Parque Geórgia",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403099,
+    "name": "Parque Ohara",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403116,
+    "name": "Pascoal Ramos",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403113,
+    "name": "Pedra 90",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403059,
+    "name": "Pedregal",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403056,
+    "name": "Pico do Amor",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403071,
+    "name": "Planalto",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403005,
+    "name": "Poção",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403017,
+    "name": "Popular",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403015,
+    "name": "Porto",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403049,
+    "name": "Praeirinho",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403050,
+    "name": "Praeiro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403026,
+    "name": "Primeiro de Março",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403010,
+    "name": "Quilombo",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403080,
+    "name": "Recanto dos Pássaros",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403087,
+    "name": "Residencial Coxipó",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403072,
+    "name": "Residencial Itamaraty",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403074,
+    "name": "Residencial São Carlos",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403076,
+    "name": "Residencial Santa Inês",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403035,
+    "name": "Ribeirão da Ponte",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403038,
+    "name": "Ribeirão do Lipa",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403085,
+    "name": "São Francisco",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403093,
+    "name": "São Gonçalo Beira Rio",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403111,
+    "name": "São João Del Rey",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403103,
+    "name": "São José",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403068,
+    "name": "São Roque",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403108,
+    "name": "São Sebastião",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403079,
+    "name": "Santa Cruz",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403032,
+    "name": "Santa Isabel",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403109,
+    "name": "Santa Laura",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403042,
+    "name": "Santa Marta",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403034,
+    "name": "Santa Rosa",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403073,
+    "name": "Sol Nascente",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403003,
+    "name": "Terceiro",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403063,
+    "name": "Terra Nova",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403106,
+    "name": "Tijucal",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403027,
+    "name": "Três Barras",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403043,
+    "name": "Ufmt",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  },
+  {
+    "id": 5103403100,
+    "name": "Vista Alegre",
+    "municipality_id": 5103403,
+    "geographical_meshes": []
+  }
+]

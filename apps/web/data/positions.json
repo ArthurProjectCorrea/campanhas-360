@@ -1,10 +1,12 @@
 [
   {
     "id": 13,
-    "name": "VEREADOR"
+    "name": "VEREADOR",
+    "type_of_coverage": "MUNICIPAL"
   },
   {
     "id": 12,
-    "name": "VICE-PREFEITO"
+    "name": "VICE-PREFEITO",
+    "type_of_coverage": "MUNICIPAL"
   }
 ]

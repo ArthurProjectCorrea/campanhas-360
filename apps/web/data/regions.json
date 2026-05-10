@@ -1,7 +1,8 @@
 [
   {
-    "id": 3,
-    "sigla": "SE",
-    "nome": "Sudeste"
+    "id": 5,
+    "acronym": "CO",
+    "name": "Centro-Oeste",
+    "geographical_meshes": []
   }
 ]

@@ -1,0 +1,11 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "dotnet build",
+    "lint": "dotnet format --verify-no-changes",
+    "format": "dotnet format",
+    "dev": "dotnet watch run"
+  }
+}

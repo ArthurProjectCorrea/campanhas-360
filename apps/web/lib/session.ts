@@ -21,13 +21,18 @@ export async function decrypt(session: string | undefined = '') {
     })
     return payload as SessionPayload
   } catch {
-    console.log('Failed to verify session')
+    return null
   }
 }
 
-export async function createSession(userId: string, domain: string, accessProfile?: AccessProfile) {
+export async function createSession(
+  userId: string,
+  domain: string,
+  apiToken: string,
+  accessProfile?: AccessProfile,
+) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, domain, accessProfile, expiresAt })
+  const session = await encrypt({ userId, domain, apiToken, accessProfile, expiresAt })
   const cookieStore = await cookies()
 
   cookieStore.set('session', session, {
@@ -61,4 +66,42 @@ export async function updateSession() {
 export async function deleteSession() {
   const cookieStore = await cookies()
   cookieStore.delete('session')
+}
+
+export async function getSession() {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  return await decrypt(session)
+}
+
+/**
+ * Valida o token da sessão diretamente com a API.
+ * Útil para garantir que a sessão no Redis ainda é válida e obter dados atualizados.
+ */
+export async function verifySessionWithApi() {
+  const session = await getSession()
+  if (!session?.apiToken) return null
+
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const response = await fetch(`${apiUrl}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${session.apiToken}`,
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Sessão expirou no Redis
+        await deleteSession()
+      }
+      return null
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Erro ao verificar sessão com a API:', error)
+    return null
+  }
 }

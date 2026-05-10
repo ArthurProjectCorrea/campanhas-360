@@ -77,7 +77,7 @@ export async function updateAccountAction(
     await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
 
     // Renova a sessão para garantir que os dados estejam atualizados
-    await createSession(payload.userId, payload.domain, payload.accessProfile)
+    await createSession(payload.userId, payload.domain, payload.apiToken, payload.accessProfile)
 
     revalidatePath('/')
 

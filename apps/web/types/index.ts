@@ -8,6 +8,7 @@ export type ActionState = {
 export type SessionPayload = {
   userId: string
   domain: string
+  apiToken: string
   accessProfile?: AccessProfile
   expiresAt: Date
 }

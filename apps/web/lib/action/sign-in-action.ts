@@ -1,24 +1,8 @@
 'use server'
 
-import users from '@/data/users.json'
-import clients from '@/data/clients.json'
-import accessProfiles from '@/data/access-profile.json'
-import accesses from '@/data/accesses.json'
-import permissions from '@/data/permissions.json'
-import screens from '@/data/screens.json'
-import campaigns from '@/data/campaigns.json'
 import { createSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
-import {
-  ActionState,
-  User,
-  Client,
-  AccessProfile,
-  Access,
-  Permission,
-  Screen,
-  Campaign,
-} from '@/types'
+import { ActionState, AccessProfile } from '@/types'
 
 export async function signInAction(
   _prevState: ActionState,
@@ -26,9 +10,6 @@ export async function signInAction(
 ): Promise<ActionState> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-
-  // Simulação de atraso de rede
-  await new Promise(resolve => setTimeout(resolve, 800))
 
   // Validação simples
   if (!email || !password) {
@@ -38,79 +19,57 @@ export async function signInAction(
     }
   }
 
-  // Verificação de credenciais
-  const user = (users as User[]).find(u => u.email === email && u.password === password)
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const response = await fetch(`${apiUrl}/auth/sign-in`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+      // Importante para evitar caching de autenticação no server-side se necessário
+      cache: 'no-store',
+    })
 
-  if (user) {
-    // Busca o cliente do usuário
-    const client = (clients as Client[]).find(c => c.id === user.client_id)
-
-    if (client) {
-      // Busca a campanha ativa do cliente
-      const activeCampaign = (campaigns as Campaign[]).find(
-        c => c.client_id === client.id && c.is_active && !c.deleted_at,
-      )
-
-      // Validação de conta ativa ou excluída (Usuário e Cliente) e existência de campanha ativa
-      const accessProfileId =
-        typeof user.access_profile_id === 'number'
-          ? user.access_profile_id
-          : (user.access_profile_id as AccessProfile).id
-
-      const profile = (accessProfiles as AccessProfile[]).find(p => p.id === accessProfileId)
-
-      if (
-        !user.is_active ||
-        user.deleted_at ||
-        !client.is_active ||
-        client.deleted_at ||
-        !activeCampaign ||
-        !profile ||
-        !profile.is_active ||
-        profile.deleted_at
-      ) {
-        return {
-          success: false,
-          message: 'Acesso negado. Sua organização não possui uma campanha ativa.',
-        }
+    if (!response.ok) {
+      if (response.status === 401) {
+        return { success: false, message: 'E-mail ou senha incorretos.' }
       }
-
-      let accessProfileData: AccessProfile | undefined = undefined
-
-      if (profile) {
-        // 2. Busca as permissões vinculadas ao perfil
-        const profileAccesses = (accesses as Access[]).filter(
-          a => a.access_profile_id === profile.id,
-        )
-
-        // 3. Enriquece os acessos com as chaves de permissão e tela
-        const joinedAccesses = profileAccesses.map(a => {
-          const p = (permissions as Permission[]).find(perm => perm.id === a.permission_id)
-          const s = (screens as Screen[]).find(scr => scr.id === a.screen_id)
-          return {
-            ...a,
-            permission_key: p?.key,
-            screen_key: s?.key,
-          }
-        })
-
-        accessProfileData = {
-          ...profile,
-          accesses: joinedAccesses,
-        }
+      if (response.status === 403) {
+        return { success: false, message: 'Acesso negado. Entre em contato com o suporte.' }
       }
-
-      // Criação da sessão segura com o domínio do cliente e perfil de acesso
-      await createSession(user.id.toString(), client.domain, accessProfileData)
-
-      // Redireciona para o dashboard do domínio
-      redirect(`/${client.domain}/dashboard`)
+      if (response.status === 429) {
+        return { success: false, message: 'Muitas tentativas. Tente novamente em 1 minuto.' }
+      }
+      return { success: false, message: 'Sistema temporariamente indisponível.' }
     }
-  }
 
-  // Mensagem genérica por segurança
-  return {
-    success: false,
-    message: 'E-mail ou senha incorretos.',
+    const data = await response.json()
+
+    // O retorno da API deve conter: { token, userId, userName, clientId, domain, accessProfileId, accessProfileName }
+    // Precisamos adaptar para o formato que o Web espera
+    const accessProfileData: AccessProfile = {
+      id: data.accessProfileId,
+      name: data.accessProfileName,
+      is_active: true,
+      client_id: data.clientId,
+      // Por enquanto as permissões podem vir vazias ou serem carregadas depois
+      accesses: [],
+    }
+
+    // Criação da sessão segura com o Token da API
+    await createSession(data.userId.toString(), data.clientDomain, data.token, accessProfileData)
+
+    // Redireciona para o dashboard do domínio
+    redirect(`/${data.clientDomain}/dashboard`)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+      throw error
+    }
+    console.error('Sign-in error:', error)
+    return {
+      success: false,
+      message: 'Ocorreu um erro ao tentar realizar o login.',
+    }
   }
 }

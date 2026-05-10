@@ -11,7 +11,8 @@ services:
       - ./apps/api/.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-    dependsOn:
+      - ASPNETCORE_URLS=http://+:80
+    depends_on:
       - postgres
       - redis
       - mailhog

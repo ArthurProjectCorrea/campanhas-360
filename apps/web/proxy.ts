@@ -17,50 +17,68 @@ export default async function proxy(req: NextRequest) {
   const isPublicRoute = publicRoutes.includes(path)
 
   // Decifra a sessão do cookie
-  const cookie = (await cookies()).get('session')?.value
-  const session = await decrypt(cookie)
+  const cookieValue = req.cookies.get('session')?.value
+  const session = await decrypt(cookieValue)
 
-  // Verifica cookies de fluxo para recuperação de senha
-  if (path === '/verify-otp') {
-    const pendingEmail = (await cookies()).get('pending-email')?.value
-    if (!pendingEmail) {
-      return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
-    }
+  // 1. Validação de Fluxo de Recuperação de Senha
+  if (path === '/verify-otp' && !req.cookies.get('pending-email')?.value) {
+    return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
   }
 
-  if (path === '/reset-password') {
-    const resetToken = (await cookies()).get('reset-token')?.value
-    if (!resetToken) {
-      return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
-    }
+  if (path === '/reset-password' && !req.cookies.get('reset-token')?.value) {
+    return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
   }
 
   // Lógica de Multi-tenancy e Proteção
   const pathParts = path.split('/').filter(Boolean)
-
-  // Verifica se o caminho atual segue o padrão /[domain]/dashboard/...
   const domainInUrl = pathParts[0]
   const isDashboardRequest = pathParts[1] === 'dashboard'
 
-  // 1. Se estiver tentando acessar uma rota de dashboard/domínio
-  if (isDashboardRequest) {
-    // Se não estiver logado, vai para sign-in
-    if (!session?.userId) {
-      return NextResponse.redirect(new URL('/sign-in', req.nextUrl))
-    }
-
-    // Se o domínio na URL for diferente do domínio da sessão, redireciona para o correto
+  // 2. Validação Ativa com a API para rotas de dashboard
+  if (isDashboardRequest && session?.userId) {
+    // Validação de Domínio (Multi-tenancy)
     if (session.domain !== domainInUrl) {
       return NextResponse.redirect(new URL(`/${session.domain}/dashboard`, req.nextUrl))
     }
+
+    try {
+      // Verifica integridade da sessão no Redis e status da conta
+      // Fazemos isso em rotas de navegação para garantir segurança sem sobrecarregar demais
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const apiResponse = await fetch(`${apiUrl}/auth/me`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+        cache: 'no-store',
+      })
+
+      if (!apiResponse.ok) {
+        // Logout Forçado: Usuário inativado, deletado ou sessão expirada no Redis
+        const response = NextResponse.redirect(
+          new URL('/sign-in?error=session_invalid', req.nextUrl),
+        )
+        response.cookies.delete('session')
+        return response
+      }
+
+      // Opcional: Aqui poderíamos comparar o token se houvesse rotação automática via middleware
+      // Mas a rotação geralmente é disparada por uma Server Action específica ou endpoint de refresh.
+    } catch (error) {
+      console.error('Erro na validação ativa do Proxy:', error)
+      // Em caso de erro de rede na API, permitimos o acesso temporário para não quebrar a UX
+      // A menos que a segurança exija bloqueio total.
+    }
   }
 
-  // 2. Se estiver logado e tentar acessar rotas públicas (como login), vai para o dashboard
+  // 3. Se não estiver logado e tentar acessar dashboard, vai para sign-in
+  if (isDashboardRequest && !session?.userId) {
+    return NextResponse.redirect(new URL('/sign-in', req.nextUrl))
+  }
+
+  // 4. Se estiver logado e tentar acessar rotas públicas, vai para o dashboard
   if (isPublicRoute && session?.userId) {
     return NextResponse.redirect(new URL(`/${session.domain}/dashboard`, req.nextUrl))
   }
 
-  // 3. Se tentar acessar /dashboard sem o domínio, redireciona para o domínio correto ou login
+  // 5. Redirecionamento de /dashboard sem domínio
   if (path === '/dashboard') {
     if (session?.userId) {
       return NextResponse.redirect(new URL(`/${session.domain}/dashboard`, req.nextUrl))

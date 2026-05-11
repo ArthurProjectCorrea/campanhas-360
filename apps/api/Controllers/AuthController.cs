@@ -164,6 +164,95 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Valida a sessão atual, recarrega os dados do banco e gera um novo token (Token Rotation).
+    /// </summary>
+    /// <returns>Novo token e dados atualizados.</returns>
+    /// <response code="200">Sessão renovada com sucesso.</response>
+    /// <response code="401">Sessão inválida ou expirada.</response>
+    /// <response code="403">Usuário, Cliente ou Perfil inativado.</response>
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(SignInResponse), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> Refresh()
+    {
+        // 1. Receber o token antigo
+        var authHeader = Request.Headers["Authorization"].ToString();
+        var oldToken = authHeader.Replace("Bearer ", "").Trim();
+
+        if (string.IsNullOrEmpty(oldToken))
+        {
+            return Unauthorized(new { message = "Token não fornecido" });
+        }
+
+        // 2. Validar se a sessão existe no Redis
+        var sessionDataJson = await _redis.StringGetAsync(oldToken);
+        if (sessionDataJson.IsNullOrEmpty)
+        {
+            return Unauthorized(new { message = "Sessão inválida ou expirada" });
+        }
+
+        // 3. Extrair UserId para recarregar do DB
+        using var doc = JsonDocument.Parse((string)sessionDataJson!);
+        if (!doc.RootElement.TryGetProperty("UserId", out var userIdProp))
+        {
+            return Unauthorized(new { message = "Dados de sessão corrompidos" });
+        }
+        var userId = userIdProp.GetGuid();
+
+        // 4. Buscar dados atualizados no PostgreSQL
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null || !user.IsActive)
+        {
+            await _redis.KeyDeleteAsync(oldToken);
+            return StatusCode(403, new { message = "Usuário inexistente ou inativo" });
+        }
+
+        var client = await _context.Clients.FindAsync(user.ClientId);
+        if (client == null || !client.IsActive)
+        {
+            await _redis.KeyDeleteAsync(oldToken);
+            return StatusCode(403, new { message = "Cliente inativo" });
+        }
+
+        var profile = await _context.AccessProfiles.FindAsync(user.AccessProfileId);
+        if (profile == null || !profile.IsActive)
+        {
+            await _redis.KeyDeleteAsync(oldToken);
+            return StatusCode(403, new { message = "Perfil de acesso inativo" });
+        }
+
+        // 5. Gerar novo token e nova sessão
+        var newToken = Guid.NewGuid().ToString();
+        var newSessionData = new
+        {
+            UserId = user.Id,
+            UserName = user.Name,
+            ClientId = client.Id,
+            ClientDomain = client.Domain,
+            AccessProfileId = profile.Id,
+            AccessProfileName = profile.Name
+        };
+
+        // Salvar nova sessão (TTL 1h)
+        await _redis.StringSetAsync(newToken, JsonSerializer.Serialize(newSessionData), TimeSpan.FromHours(1));
+
+        // 6. Remover token antigo
+        await _redis.KeyDeleteAsync(oldToken);
+
+        // 7. Retornar resposta
+        return Ok(new SignInResponse(
+            newToken,
+            user.Id,
+            user.Name,
+            client.Id,
+            client.Domain,
+            profile.Id,
+            profile.Name
+        ));
+    }
+
+    /// <summary>
     /// Solicita o envio de um código OTP para recuperação de senha.
     /// </summary>
     /// <response code="200">Sempre retorna sucesso para evitar enumeração.</response>

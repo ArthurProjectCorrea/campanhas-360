@@ -92,8 +92,8 @@ export async function verifySessionWithApi() {
     })
 
     if (!response.ok) {
-      if (response.status === 401) {
-        // Sessão expirou no Redis
+      if (response.status === 401 || response.status === 403) {
+        // Sessão expirou ou usuário foi inativado
         await deleteSession()
       }
       return null
@@ -102,6 +102,47 @@ export async function verifySessionWithApi() {
     return await response.json()
   } catch (error) {
     console.error('Erro ao verificar sessão com a API:', error)
+    return null
+  }
+}
+
+/**
+ * Solicita a renovação do token de sessão (Token Rotation) para a API.
+ */
+export async function refreshSessionWithApi() {
+  const session = await getSession()
+  if (!session?.apiToken) return null
+
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const response = await fetch(`${apiUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.apiToken}`,
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        await deleteSession()
+      }
+      return null
+    }
+
+    const data = await response.json()
+
+    // Atualiza a sessão com o novo token e dados
+    await createSession(data.userId, data.clientDomain, data.token, {
+      id: data.accessProfileId,
+      name: data.accessProfileName,
+      is_active: true,
+      client_id: data.clientId,
+    })
+
+    return data
+  } catch (error) {
+    console.error('Erro ao renovar sessão com a API:', error)
     return null
   }
 }

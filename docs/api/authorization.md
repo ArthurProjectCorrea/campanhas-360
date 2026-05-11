@@ -15,7 +15,11 @@ A autenticação é baseada em tokens GUID temporários armazenados no Redis. Ca
   "ClientId": "guid",
   "ClientDomain": "string",
   "AccessProfileId": "guid",
-  "AccessProfileName": "string"
+  "AccessProfileName": "string",
+  "Permissions": [
+    { "Screen": "dashboard", "Key": "view" },
+    { "Screen": "access_profile", "Key": "view" }
+  ]
 }
 ```
 
@@ -109,7 +113,10 @@ flowchart TD
   "clientId": "guid",
   "clientDomain": "novo-dominio",
   "accessProfileId": "guid",
-  "accessProfileName": "Perfil Atualizado"
+  "accessProfileName": "Perfil Atualizado",
+  "permissions": [
+    { "screen": "dashboard", "key": "view" }
+  ]
 }
 ```
 

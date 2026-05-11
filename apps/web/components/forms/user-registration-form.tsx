@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useActionState } from 'react'
 import { User, AccessProfile } from '@/types'
-import { updateUserAction, createUserAction } from '@/lib/action/user-registration-action'
+import { upsertUserAction } from '@/lib/action/user-registration-action'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -40,9 +40,7 @@ export function UserRegistrationForm({
   onSuccess,
   mode,
 }: UserRegistrationFormProps) {
-  const action = mode === 'create' ? createUserAction : updateUserAction
-
-  const [state, formAction, isPending] = useActionState(action, {
+  const [state, formAction, isPending] = useActionState(upsertUserAction, {
     success: false,
     message: '',
   })
@@ -86,7 +84,9 @@ export function UserRegistrationForm({
           <FieldLabel>Perfil de Acesso</FieldLabel>
           <Select
             name="access_profile_id"
-            defaultValue={initialData?.access_profile_id?.toString()}
+            defaultValue={
+              initialData?.accessProfileId?.toString() || initialData?.access_profile_id?.toString()
+            }
             disabled={disabled}
             required
           >
@@ -104,16 +104,22 @@ export function UserRegistrationForm({
         </Field>
 
         <FieldGroup>
-          <FieldLabel htmlFor="is_active">
+          <FieldLabel htmlFor="isActive">
             <Field orientation="horizontal">
               <FieldContent>
                 <FieldTitle>Usuário Ativo</FieldTitle>
                 <FieldDescription>Define se o usuário pode acessar o sistema.</FieldDescription>
               </FieldContent>
               <Switch
-                id="is_active"
-                name="is_active"
-                defaultChecked={initialData ? initialData.is_active : true}
+                id="isActive"
+                name="isActive"
+                defaultChecked={
+                  initialData
+                    ? initialData.isActive !== undefined
+                      ? initialData.isActive
+                      : initialData.is_active
+                    : true
+                }
                 disabled={disabled}
               />
             </Field>

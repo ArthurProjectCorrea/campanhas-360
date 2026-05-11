@@ -8,7 +8,7 @@ export default async function RegionalPlanningPage({
 }: {
   params: Promise<{ domain: string }>
 }) {
-  const { domain } = await params
+  await params
   const data = await getRegionalPlanningData()
 
   if (!data) {

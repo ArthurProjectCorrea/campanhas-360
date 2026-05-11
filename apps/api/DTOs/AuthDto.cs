@@ -24,8 +24,11 @@ public record SignInResponse(
     Guid ClientId,
     string ClientDomain,
     Guid AccessProfileId,
-    string AccessProfileName
+    string AccessProfileName,
+    List<UserPermissionDto> Permissions
 );
+
+public record UserPermissionDto(string Screen, string Key);
 
 /// <summary>
 /// Solicitação de início de recuperação de senha.

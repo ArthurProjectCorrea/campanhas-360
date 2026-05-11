@@ -66,10 +66,9 @@ flowchart TD
     J --> K[Retornar 200 OK + Token]
 ```
 
-**Comportamento da API:**
 - **Request Body**: JSON contendo `email` e `password`.
 - **Validações**: A API verifica sequencialmente o estado do Usuário (`boolean`), do Cliente vinculado (`boolean`) e do Perfil de acesso (`boolean`).
-- **Sessão**: Os dados do usuário, cliente e perfil são serializados e armazenados no Redis usando o Token como chave.
+- **Sessão**: Os dados do usuário, cliente e perfil, incluindo a **matriz completa de permissões** (Screens e Permissions), são serializados e armazenados no Redis usando o Token como chave. Isso permite validações de RBAC de alta performance sem novas consultas ao PostgreSQL.
 
 ---
 
@@ -123,7 +122,17 @@ A API utiliza o padrão **camelCase** para as propriedades JSON nas respostas.
   "clientId": "string (guid)",
   "clientDomain": "string",
   "accessProfileId": "string (guid)",
-  "accessProfileName": "string"
+  "accessProfileName": "string",
+  "permissions": [
+    {
+      "screen": "access_profile",
+      "key": "view"
+    },
+    {
+      "screen": "access_profile",
+      "key": "create"
+    }
+  ]
 }
 ```
 

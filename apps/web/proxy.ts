@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { decrypt } from '@/lib/session'
-import { cookies } from 'next/headers'
 
 // Rotas públicas que não requerem autenticação
 const publicRoutes = [

@@ -58,7 +58,13 @@ export async function signInAction(
     }
 
     // Criação da sessão segura com o Token da API
-    await createSession(data.userId.toString(), data.clientDomain, data.token, accessProfileData)
+    await createSession(
+      data.userId.toString(),
+      data.clientDomain,
+      data.token,
+      accessProfileData,
+      data.permissions,
+    )
 
     // Redireciona para o dashboard do domínio
     redirect(`/${data.clientDomain}/dashboard`)

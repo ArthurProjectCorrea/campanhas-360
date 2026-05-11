@@ -60,10 +60,10 @@ export function AccessProfileTable({
         },
       },
       {
-        accessorKey: 'is_active',
+        accessorKey: 'isActive',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-          const isActive = row.getValue('is_active') as boolean
+          const isActive = row.getValue('isActive') as boolean
           return (
             <Badge variant={isActive ? 'default' : 'secondary'}>
               {isActive ? 'Ativo' : 'Inativo'}
@@ -75,10 +75,10 @@ export function AccessProfileTable({
         },
       },
       {
-        accessorKey: 'created_at',
+        accessorKey: 'createdAt',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Criado em" />,
         cell: ({ row }) => {
-          const dateString = row.getValue('created_at') as string
+          const dateString = row.getValue('createdAt') as string
           if (!dateString) return '-'
           const date = new Date(dateString)
 

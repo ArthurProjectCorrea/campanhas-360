@@ -1,80 +1,79 @@
-# Documento de Análise: Perfil de Acesso
+# Integração do Perfil de Acesso (Web -> API)
 
-## 1. Introdução
-Este documento detalha o funcionamento do módulo de **Perfil de Acesso**, responsável por gerenciar as permissões granulares dos usuários dentro do sistema. O módulo permite criar papéis (roles) específicos e definir quais ações (visualizar, criar, atualizar, deletar) cada papel pode realizar em cada tela do sistema.
+Este documento detalha a migração do módulo de **Perfil de Acesso** de uma arquitetura baseada em arquivos JSON locais para uma integração completa com a **API (ASP.NET Core)**, mantendo a segurança via RBAC e o isolamento Multi-tenant.
 
----
+## 1. Transição da Arquitetura
 
-## 2. Funcionamento do Módulo (Protótipo Atual)
+O sistema abandona a leitura direta de `accesses.json`, `screens.json` e `permissions.json` para delegar a persistência e a lógica de negócio à API. O Web agora atua como um consumidor e orquestrador da interface.
 
-### 2.1. Arquitetura e Fluxo de Dados
-O gerenciamento de acessos utiliza uma arquitetura baseada em múltiplos arquivos JSON:
-- **Perfis**: Armazenados em `data/access-profile.json`.
-- **Acessos (Vínculos)**: A relação entre perfil, tela e permissão é mantida em `data/accesses.json`.
-- **Telas**: Definições de telas disponíveis em `data/screens.json`.
-- **Permissões**: Tipos de ações (view, create, update, delete) em `data/permissions.json`.
-
-### 2.2. Matriz de Permissões
-Diferente de outros formulários, o Perfil de Acesso implementa uma **Matriz de Permissões** (Grid):
-1. **Mapeamento Restritivo**: Nem todas as telas possuem todas as ações (ex: algumas telas não permitem deleção). Isso é controlado pelo `SCREEN_PERMISSIONS_MAPPING` no componente.
-2. **Herança Global**: Certas permissões são consideradas globais e obrigatórias (ex: `dashboard:view`). Estas são injetadas automaticamente via `GLOBAL_PERMISSIONS_MAPPING` e ocultadas da interface para simplificar a gestão.
-3. **Visual**: As opções não permitidas para uma tela específica são exibidas desabilitadas e com opacidade reduzida.
-
-### 2.3. Validação no Login
-O sistema agora valida o status do perfil no momento da autenticação. Se o perfil de um usuário estiver inativo (`is_active: false`) ou marcado como excluído, o login é bloqueado, mesmo que o usuário individual esteja ativo.
+### Fluxo de Dados Consolidado
+Ao salvar um perfil, o Web envia um único JSON estruturado. A API é responsável por desmembrar esses dados entre as tabelas de perfis e a matriz de acessos (tabela de junção).
 
 ---
 
-## 3. Regras de Negócio e Permissões (RBAC)
+## 2. Controle de Acesso no Web (RBAC)
 
-### 3.1. Controle de Acesso Granular
-O módulo valida quatro permissões específicas para a tela `access_profile`:
-- **view**: Permite listar os perfis e visualizar detalhes (leitura).
-- **create**: Habilita a criação de novos perfis e a definição inicial de permissões.
-- **update**: Permite alterar o nome, status e a matriz de permissões de perfis existentes.
-- **delete**: Permite a exclusão lógica (`deleted_at`) de perfis.
+A segurança no front-end é baseada na lista de permissões retornada pela API durante o login e armazenada de forma segura na sessão.
 
-### 3.2. Proteção e Integridade
-- **Multi-tenancy**: Perfis de acesso são isolados por `client_id`. Um administrador de uma organização não pode visualizar ou editar perfis de outra.
-- **Validação de Servidor**: As Server Actions (`access-profile-action.ts`) revalidam as permissões do administrador antes de qualquer operação de escrita ou deleção.
+### 2.1. O Facilitador `hasPermission`
+Para padronizar as verificações em toda a aplicação, deve ser utilizado um utilitário centralizado que verifica se o usuário possui a permissão necessária para uma tela específica.
 
----
+**Exemplo de Uso:**
+```typescript
+// Verifica se pode visualizar a tela de perfis
+if (!hasPermission('access_profile', 'view')) {
+  return redirect('/forbidden');
+}
 
-## 4. Componentes e UI/UX
+// Condicional na UI para botões de ação
+{hasPermission('access_profile', 'create') && <Button>Novo Perfil</Button>}
+```
 
-### 4.1. DataTable Padronizado
-Segue o padrão de UX do sistema:
-- **Ações**: Coluna alinhada à direita (`justify-end`) com tooltips para Editar/Visualizar e Excluir.
-- **Status**: Badge colorido para indicar se o perfil está Ativo ou Inativo.
-- **Datas**: Formatação brasileira padronizada (`DD/MM/AAAA - HH:mm`).
-
-### 4.2. FormButtons (Rodapé Fixo)
-Implementação de um componente de rodapé reutilizável (`FormButtons`):
-- **Posicionamento Inteligente**: Ajusta seu recuo (`left`) dinamicamente com base no estado da Sidebar (expandida, recolhida ou mobile).
-- **Ações**: Botões de Voltar, Descartar e Salvar/Criar sempre visíveis no final da página.
-- **Blur**: Efeito de vidro (backdrop-blur) para manter a elegância visual.
-
-### 4.3. Interface da Matriz
-- **Checkboxes Centralizados**: Alinhamento vertical e horizontal perfeito dentro das colunas da tabela de permissões.
-- **Feedback de Permissão**: Telas que não suportam certas ações bloqueiam o checkbox correspondente, evitando configurações inválidas.
+### 2.2. Níveis de Proteção
+- **view**: Validada no `layout.tsx` ou `page.tsx`. Se o usuário não possuir esta permissão para a rota atual, o sistema deve impedir a renderização e exibir uma tela de erro/acesso negado.
+- **create, update, delete**: Validado diretamente nos componentes de UI (DataTables e Forms) para ocultar ou desabilitar botões e funcionalidades, garantindo que o usuário veja apenas o que pode operar.
 
 ---
 
-## 5. Requisitos para Integração com API Real
+## 3. Gestão da Matriz de Permissões
 
-### 5.1. Performance
-- **Cache de Permissões**: Em produção, as permissões do usuário devem ser cacheadas (ex: Redis) após o login para evitar consultas repetitivas ao banco de dados em cada renderização de página/componente.
+Apesar da migração para API, o Web mantém a lógica de inteligência da interface para facilitar a configuração pelo administrador:
 
-### 5.2. Segurança
-- **Proteção contra Escalação**: Impedir que um usuário com permissão de editar perfis conceda a si mesmo ou a outros permissões que ele próprio não possui.
+1. **Mapeamento Restritivo**: O componente de formulário continua respeitando quais ações são válidas para cada tela (ex: a tela de Dashboard não possui permissão de `delete`).
+2. **Permissões Globais**: Telas consideradas obrigatórias ou básicas (ex: `dashboard:view`) são injetadas automaticamente pela API ou tratadas como implícitas no Web, simplificando a matriz visual para o usuário.
+3. **Isolamento de ClientId**: O Web **não informa** o `ClientId` nas requisições de criação ou atualização. A API identifica o inquilino automaticamente através do token de autenticação.
 
 ---
 
-## 6. Checklist de Implementação
-- [x] CRUD completo de Perfis de Acesso.
-- [x] Matriz de permissões com mapeamento restritivo por tela.
-- [x] Injeção automática de permissões globais.
-- [x] Validação de perfil ativo no login.
-- [x] Rodapé fixo (`FormButtons`) com ajuste dinâmico de sidebar.
-- [x] Checkboxes centralizados e cabeçalhos fixos.
-- [x] Títulos e descrições dinâmicos baseados no `screens.json`.
+## 4. Integração com Server Actions
+
+As operações de escrita são encapsuladas em Server Actions para garantir que o `apiToken` seja enviado de forma segura no Header de autorização.
+
+### Create/Update Profile
+- **Action**: `upsertAccessProfile(data)`
+- **Payload**: O objeto consolidado contendo nome, status e o array de mapeamento `{ screenId, permissionId }`.
+- **API Response**: Em caso de sucesso, o Web deve invalidar as tags de cache pertinentes para atualizar as listagens.
+
+---
+
+## 5. Mapeamento de Status e Feedback
+
+A tradução de retornos da API para o usuário segue o padrão do sistema:
+
+| Status API | Reação no Web | Mensagem ao Usuário |
+| :--- | :--- | :--- |
+| `201/200` | Sucesso | "Perfil salvo com sucesso!" |
+| `403` | Bloqueio RBAC | "Você não tem permissão para esta ação." |
+| `404` | Cross-tenant | "Perfil não encontrado." |
+| `400` | Validação | Exibe erros específicos do formulário (Zod). |
+
+---
+
+## 6. Checklist de Migração
+
+- [ ] Implementar utilitário `hasPermission` no `lib/session.ts` ou hook `usePermission`.
+- [ ] Atualizar `AccessProfileForm` para enviar o payload consolidado para a API.
+- [ ] Adicionar verificações de `view` nas rotas protegidas.
+- [ ] Ocultar botões de Ação no DataTable baseando-se em `create`, `update` e `delete`.
+- [ ] Remover dependências de leitura de arquivos JSON locais no módulo de Perfis.
+- [ ] Testar fluxo de logout automático se as permissões forem revogadas durante a sessão (via Middleware).

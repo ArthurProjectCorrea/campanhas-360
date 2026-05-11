@@ -30,9 +30,10 @@ export async function createSession(
   domain: string,
   apiToken: string,
   accessProfile?: AccessProfile,
+  permissions?: { screen: string; key: string }[],
 ) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, domain, apiToken, accessProfile, expiresAt })
+  const session = await encrypt({ userId, domain, apiToken, accessProfile, permissions, expiresAt })
   const cookieStore = await cookies()
 
   cookieStore.set('session', session, {
@@ -133,16 +134,34 @@ export async function refreshSessionWithApi() {
     const data = await response.json()
 
     // Atualiza a sessão com o novo token e dados
-    await createSession(data.userId, data.clientDomain, data.token, {
-      id: data.accessProfileId,
-      name: data.accessProfileName,
-      is_active: true,
-      client_id: data.clientId,
-    })
+    await createSession(
+      data.userId,
+      data.clientDomain,
+      data.token,
+      {
+        id: data.accessProfileId,
+        name: data.accessProfileName,
+        is_active: true,
+        client_id: data.clientId,
+      },
+      data.permissions,
+    )
 
     return data
   } catch (error) {
     console.error('Erro ao renovar sessão com a API:', error)
     return null
   }
+}
+
+/**
+ * Verifica se o usuário autenticado possui uma permissão específica para uma tela.
+ */
+export async function hasPermission(screen: string, key: string): Promise<boolean> {
+  const session = await getSession()
+  if (!session?.permissions) return false
+
+  // Permissões consideradas globais ou de acesso básico podem ser tratadas aqui se necessário
+  // Por enquanto, verificamos a matriz exata vinda da API
+  return session.permissions.some(p => p.screen === screen && p.key === key)
 }

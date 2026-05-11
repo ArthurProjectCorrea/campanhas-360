@@ -76,6 +76,9 @@ public class AuthController : ControllerBase
             return StatusCode(403, new { message = "Perfil de acesso inativo" });
         }
 
+        // 5. Buscar permissões do perfil
+        var permissions = await GetUserPermissionsAsync(profile.Id);
+
         // 9. Criar sessão no redis com expiração de 1 hora
         var token = Guid.NewGuid().ToString();
         var sessionData = new
@@ -85,7 +88,8 @@ public class AuthController : ControllerBase
             ClientId = client.Id,
             ClientDomain = client.Domain,
             AccessProfileId = profile.Id,
-            AccessProfileName = profile.Name
+            AccessProfileName = profile.Name,
+            Permissions = permissions
         };
 
         await _redis.StringSetAsync(token, JsonSerializer.Serialize(sessionData), TimeSpan.FromHours(1));
@@ -98,7 +102,8 @@ public class AuthController : ControllerBase
             client.Id,
             client.Domain,
             profile.Id,
-            profile.Name
+            profile.Name,
+            permissions
         ));
     }
 
@@ -223,6 +228,7 @@ public class AuthController : ControllerBase
         }
 
         // 5. Gerar novo token e nova sessão
+        var permissions = await GetUserPermissionsAsync(profile.Id);
         var newToken = Guid.NewGuid().ToString();
         var newSessionData = new
         {
@@ -231,7 +237,8 @@ public class AuthController : ControllerBase
             ClientId = client.Id,
             ClientDomain = client.Domain,
             AccessProfileId = profile.Id,
-            AccessProfileName = profile.Name
+            AccessProfileName = profile.Name,
+            Permissions = permissions
         };
 
         // Salvar nova sessão (TTL 1h)
@@ -248,8 +255,17 @@ public class AuthController : ControllerBase
             client.Id,
             client.Domain,
             profile.Id,
-            profile.Name
+            profile.Name,
+            permissions
         ));
+    }
+
+    private async Task<List<UserPermissionDto>> GetUserPermissionsAsync(Guid profileId)
+    {
+        return await _context.Accesses
+            .Where(a => a.AccessProfileId == profileId)
+            .Select(a => new UserPermissionDto(a.Screen.Key, a.Permission.Key))
+            .ToListAsync();
     }
 
     /// <summary>

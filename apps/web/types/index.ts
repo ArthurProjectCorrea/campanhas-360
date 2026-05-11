@@ -10,6 +10,7 @@ export type SessionPayload = {
   domain: string
   apiToken: string
   accessProfile?: AccessProfile
+  permissions?: { screen: string; key: string }[]
   expiresAt: Date
 }
 
@@ -18,15 +19,22 @@ export type User = {
   name: string
   email: string
   password?: string
-  client_id: string | number
+  clientId?: string | number
+  client_id?: string | number
+  accessProfileId?: number | AccessProfile
   access_profile_id: number | AccessProfile
+  isActive?: boolean
   is_active: boolean
+  createdAt?: string
   created_at?: string
+  updatedAt?: string
   updated_at?: string
+  deletedAt?: string | null
   deleted_at?: string | null
 }
 
 export interface UserRegistration extends User {
+  accessProfileName?: string
   access_profile_name: string
 }
 
@@ -46,21 +54,31 @@ export type Screen = {
 }
 
 export type Access = {
-  access_profile_id: number
-  permission_id: number
-  screen_id: number
+  accessProfileId?: string
+  access_profile_id?: string | number
+  permissionId: number
+  permission_id?: number
+  screenId: number
+  screen_id?: number
+  permissionKey?: string
   permission_key?: string
+  screenKey?: string
   screen_key?: string
 }
 
 export type AccessProfile = {
-  id: number
+  id: string | number
   name: string
-  is_active: boolean
-  client_id: number
+  isActive?: boolean
+  is_active?: boolean
+  clientId?: string
+  client_id?: string | number
   accesses?: Access[]
+  createdAt?: string
   created_at?: string
+  updatedAt?: string
   updated_at?: string
+  deletedAt?: string | null
   deleted_at?: string | null
 }
 

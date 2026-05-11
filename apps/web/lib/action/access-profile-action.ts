@@ -1,281 +1,164 @@
 'use server'
 
-import { cookies } from 'next/headers'
-import { decrypt } from '@/lib/session'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import accessProfiles from '@/data/access-profile.json'
-import users from '@/data/users.json'
-import screens from '@/data/screens.json'
-import permissions from '@/data/permissions.json'
-import accesses from '@/data/accesses.json'
-import { AccessProfile, Screen, Access, User, ActionState, Permission } from '@/types'
+import { getSession, hasPermission } from '@/lib/session'
+import { ActionState, Screen, Permission } from '@/types'
 import { forbidden } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
-const ACCESS_PROFILES_FILE_PATH = path.join(process.cwd(), 'data/access-profile.json')
-const ACCESSES_FILE_PATH = path.join(process.cwd(), 'data/accesses.json')
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+/**
+ * Busca a lista de perfis de acesso do cliente autenticado.
+ */
 export async function getAccessProfileData() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
+  const session = await getSession()
+  if (!session?.apiToken) return null
 
-  if (!payload || !payload.userId) {
-    return null
-  }
-
-  // Verificação de permissão 'view' para a tela 'access_profile'
-  const hasViewPermission = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'view',
-  )
-
-  if (!hasViewPermission) {
+  // Verificação de permissão 'view'
+  if (!(await hasPermission('access_profile', 'view'))) {
     forbidden()
   }
 
-  // Permissões adicionais para a UI
-  const canCreate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'create',
-  )
+  try {
+    const [profilesRes, screensRes, permissionsRes] = await Promise.all([
+      fetch(`${API_URL}/access-profiles`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+        next: { tags: ['access-profiles'] },
+      }),
+      // Nota: Telas e Permissões poderiam ser endpoints públicos ou cacheados
+      fetch(`${API_URL}/screens`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+      fetch(`${API_URL}/permissions`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+    ])
 
-  const canUpdate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'update',
-  )
+    if (!profilesRes.ok) return null
 
-  const canDelete = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'delete',
-  )
+    const screens = (await screensRes.json()) as Screen[]
+    const permissions = (await permissionsRes.json()) as Permission[]
+    const screen = screens.find(s => s.key === 'access_profile')
 
-  const currentUser = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
-  if (!currentUser) return null
-
-  const screen = (screens as Screen[]).find(s => s.key === 'access_profile')
-
-  return {
-    accessProfiles: (accessProfiles as AccessProfile[]).filter(
-      p => p.client_id === currentUser.client_id && !p.deleted_at,
-    ),
-    screen,
-    canCreate,
-    canUpdate,
-    canDelete,
-    lookups: {
-      screens: screens as Screen[],
-      permissions: permissions as Permission[],
-    },
+    return {
+      accessProfiles: await profilesRes.json(),
+      screen,
+      canCreate: await hasPermission('access_profile', 'create'),
+      canUpdate: await hasPermission('access_profile', 'update'),
+      canDelete: await hasPermission('access_profile', 'delete'),
+      lookups: {
+        screens,
+        permissions,
+      },
+    }
+  } catch (error) {
+    console.error('Error fetching access profile data:', error)
+    return null
   }
 }
 
+/**
+ * Busca um perfil específico por ID com seus respectivos acessos.
+ */
 export async function getAccessProfileById(id: string | number) {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
+  const session = await getSession()
+  if (!session?.apiToken) return null
 
-  if (!payload || !payload.userId) return null
+  try {
+    const response = await fetch(`${API_URL}/access-profiles/${id}`, {
+      headers: { Authorization: `Bearer ${session.apiToken}` },
+    })
 
-  const profile = (accessProfiles as AccessProfile[]).find(
-    p => p.id.toString() === id.toString() && !p.deleted_at,
-  )
-
-  if (!profile) return null
-
-  // Busca as permissões vinculadas a este perfil
-  const profileAccesses = (accesses as Access[]).filter(
-    a => a.access_profile_id.toString() === id.toString(),
-  )
-
-  return {
-    ...profile,
-    accesses: profileAccesses,
+    if (!response.ok) return null
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching profile by id:', error)
+    return null
   }
 }
 
-export async function updateAccessProfile(
+/**
+ * Cria ou atualiza um perfil de acesso (Upsert).
+ */
+export async function upsertAccessProfileAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canUpdate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'update',
-  )
-
-  if (!canUpdate) {
-    return { success: false, message: 'Sem permissão para atualizar perfis.' }
-  }
+  const session = await getSession()
+  if (!session?.apiToken) return { success: false, message: 'Sessão expirada.' }
 
   const id = formData.get('id') as string
   const name = formData.get('name') as string
-  const isActive = formData.get('is_active') === 'on'
-  const permissionsData = formData.get('permissions') as string // JSON string
+  const isActive = formData.get('isActive') === 'on'
+  const permissionsData = formData.get('permissions') as string // JSON string [{screenId, permissionId}]
 
-  if (!id || !name) {
+  if (!name || !permissionsData) {
     return { success: false, message: 'Preencha todos os campos obrigatórios.' }
   }
 
-  try {
-    const allProfiles = [...(accessProfiles as AccessProfile[])]
-    const index = allProfiles.findIndex(p => p.id.toString() === id.toString())
+  const isUpdate = !!id
+  const permissionKey = isUpdate ? 'update' : 'create'
 
-    if (index === -1) {
-      return { success: false, message: 'Perfil não encontrado.' }
-    }
-
-    allProfiles[index] = {
-      ...allProfiles[index],
-      name,
-      is_active: isActive,
-      updated_at: new Date().toISOString(),
-    }
-
-    await fs.writeFile(ACCESS_PROFILES_FILE_PATH, JSON.stringify(allProfiles, null, 2))
-
-    // Atualizar permissões (accesses.json)
-    const newAccessesList = JSON.parse(permissionsData) as {
-      screen_id: number
-      permission_id: number
-    }[]
-    let allAccesses = [...(accesses as Access[])]
-
-    // Remove as antigas do perfil
-    allAccesses = allAccesses.filter(a => a.access_profile_id.toString() !== id.toString())
-
-    // Adiciona as novas
-    newAccessesList.forEach(acc => {
-      allAccesses.push({
-        access_profile_id: Number(id),
-        screen_id: acc.screen_id,
-        permission_id: acc.permission_id,
-      })
-    })
-
-    await fs.writeFile(ACCESSES_FILE_PATH, JSON.stringify(allAccesses, null, 2))
-    revalidatePath('/')
-
-    return { success: true, message: 'Perfil de acesso atualizado com sucesso.' }
-  } catch (error) {
-    console.error('Erro ao atualizar perfil:', error)
-    return { success: false, message: 'Erro ao salvar as alterações.' }
-  }
-}
-
-export async function createAccessProfile(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canCreate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'create',
-  )
-
-  if (!canCreate) {
-    return { success: false, message: 'Sem permissão para criar perfis.' }
-  }
-
-  const name = formData.get('name') as string
-  const isActive = formData.get('is_active') === 'on'
-  const permissionsData = formData.get('permissions') as string
-
-  if (!name) {
-    return { success: false, message: 'O nome do perfil é obrigatório.' }
+  if (!(await hasPermission('access_profile', permissionKey))) {
+    return { success: false, message: 'Sem permissão para esta ação.' }
   }
 
   try {
-    const currentUser = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
-    if (!currentUser) return { success: false, message: 'Usuário não encontrado.' }
-
-    const allProfiles = [...(accessProfiles as AccessProfile[])]
-    const nextId = allProfiles.length > 0 ? Math.max(...allProfiles.map(p => Number(p.id))) + 1 : 1
-
-    const newProfile: AccessProfile = {
-      id: nextId,
+    const payload = {
       name,
-      is_active: isActive,
-      client_id: Number(currentUser.client_id),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
+      isActive,
+      accesses: JSON.parse(permissionsData),
     }
 
-    allProfiles.push(newProfile)
-    await fs.writeFile(ACCESS_PROFILES_FILE_PATH, JSON.stringify(allProfiles, null, 2))
+    const url = isUpdate ? `${API_URL}/access-profiles/${id}` : `${API_URL}/access-profiles`
+    const method = isUpdate ? 'PUT' : 'POST'
 
-    // Salvar permissões
-    const newAccessesList = JSON.parse(permissionsData) as {
-      screen_id: number
-      permission_id: number
-    }[]
-    const allAccesses = [...(accesses as Access[])]
-
-    newAccessesList.forEach(acc => {
-      allAccesses.push({
-        access_profile_id: nextId,
-        screen_id: acc.screen_id,
-        permission_id: acc.permission_id,
-      })
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.apiToken}`,
+      },
+      body: JSON.stringify(payload),
     })
 
-    await fs.writeFile(ACCESSES_FILE_PATH, JSON.stringify(allAccesses, null, 2))
-    revalidatePath('/')
+    if (!response.ok) {
+      if (response.status === 403) return { success: false, message: 'Acesso negado pela API.' }
+      return { success: false, message: 'Erro ao salvar o perfil na API.' }
+    }
 
-    return { success: true, message: 'Perfil de acesso criado com sucesso.' }
+    revalidatePath('/')
+    return {
+      success: true,
+      message: `Perfil de acesso ${isUpdate ? 'atualizado' : 'criado'} com sucesso.`,
+    }
   } catch (error) {
-    console.error('Erro ao criar perfil:', error)
-    return { success: false, message: 'Erro ao criar o perfil.' }
+    console.error('Error upserting access profile:', error)
+    return { success: false, message: 'Erro de conexão com o servidor.' }
   }
 }
 
+/**
+ * Realiza a exclusão lógica do perfil.
+ */
 export async function deleteAccessProfile(id: string | number): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
+  const session = await getSession()
+  if (!session?.apiToken) return { success: false, message: 'Sessão expirada.' }
 
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canDelete = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'access_profile' && a.permission_key === 'delete',
-  )
-
-  if (!canDelete) {
+  if (!(await hasPermission('access_profile', 'delete'))) {
     return { success: false, message: 'Sem permissão para excluir perfis.' }
   }
 
   try {
-    const allProfiles = [...(accessProfiles as AccessProfile[])]
-    const index = allProfiles.findIndex(p => p.id.toString() === id.toString())
+    const response = await fetch(`${API_URL}/access-profiles/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.apiToken}` },
+    })
 
-    if (index === -1) {
-      return { success: false, message: 'Perfil não encontrado.' }
+    if (!response.ok) {
+      return { success: false, message: 'Erro ao excluir o perfil.' }
     }
 
-    allProfiles[index] = {
-      ...allProfiles[index],
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    await fs.writeFile(ACCESS_PROFILES_FILE_PATH, JSON.stringify(allProfiles, null, 2))
     revalidatePath('/')
-
     return { success: true, message: 'Perfil de acesso excluído com sucesso.' }
   } catch (error) {
-    console.error('Erro ao excluir perfil:', error)
-    return { success: false, message: 'Erro ao processar a exclusão.' }
+    console.error('Error deleting profile:', error)
+    return { success: false, message: 'Erro de conexão com o servidor.' }
   }
 }

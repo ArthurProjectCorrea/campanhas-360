@@ -3,11 +3,7 @@ import { UserRegistrationTable } from '@/components/tables/user-registration-tab
 import { getUserRegistrationData } from '@/lib/action/user-registration-action'
 import { redirect } from 'next/navigation'
 
-export default async function UserRegistrationPage({
-  params,
-}: {
-  params: Promise<{ domain: string }>
-}) {
+export default async function UserRegistrationPage() {
   const data = await getUserRegistrationData()
 
   if (!data) {

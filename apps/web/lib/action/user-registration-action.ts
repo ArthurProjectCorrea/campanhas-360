@@ -1,246 +1,142 @@
 'use server'
 
-import { cookies } from 'next/headers'
-import { decrypt } from '@/lib/session'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import users from '@/data/users.json'
-import accessProfiles from '@/data/access-profile.json'
-import screens from '@/data/screens.json'
-import { User, AccessProfile, Screen, Access, ActionState } from '@/types'
+import { getSession, hasPermission } from '@/lib/session'
+import { AccessProfile, ActionState, Screen } from '@/types'
 import { forbidden } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
-const USERS_FILE_PATH = path.join(process.cwd(), 'data/users.json')
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+/**
+ * Busca dados para a tela de registro de usuários via API.
+ */
 export async function getUserRegistrationData() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
-    return null
-  }
+  const session = await getSession()
+  if (!session?.apiToken) return null
 
   // Verificação de permissão
-  const hasViewPermission = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'view',
-  )
-
-  if (!hasViewPermission) {
+  if (!(await hasPermission('user_registration', 'view'))) {
     forbidden()
   }
 
-  const currentUser = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
-  if (!currentUser) return null
+  try {
+    const [usersRes, profilesRes, screensRes] = await Promise.all([
+      fetch(`${API_URL}/users`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+      fetch(`${API_URL}/access-profiles`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+      }),
+      fetch(`${API_URL}/screens`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+    ])
 
-  // Filtra usuários pelo client_id do usuário logado e que não foram deletados
-  const clientUsers = (users as User[]).filter(
-    u => u.client_id === currentUser.client_id && !u.deleted_at,
-  )
+    if (!usersRes.ok || !profilesRes.ok) return null
 
-  // Mapeia os perfis de acesso para pegar os nomes
-  const usersWithProfiles = clientUsers.map(user => {
-    const profile = (accessProfiles as AccessProfile[]).find(p => p.id === user.access_profile_id)
+    const usersData = await usersRes.json()
+    const profiles = await profilesRes.json()
+    const screens = await screensRes.json()
+    const screen = screens.find((s: Screen) => s.key === 'user_registration')
+
     return {
-      ...user,
-      access_profile_name: profile?.name || 'Não definido',
+      users: usersData,
+      screen,
+      canCreate: await hasPermission('user_registration', 'create'),
+      canUpdate: await hasPermission('user_registration', 'update'),
+      canDelete: await hasPermission('user_registration', 'delete'),
+      lookups: {
+        accessProfiles: profiles as AccessProfile[],
+      },
     }
-  })
-
-  const screen = (screens as Screen[]).find(s => s.key === 'user_registration')
-
-  const canCreate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'create',
-  )
-
-  const canUpdate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'update',
-  )
-
-  const canDelete = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'delete',
-  )
-
-  return {
-    users: usersWithProfiles,
-    screen,
-    canCreate,
-    canUpdate,
-    canDelete,
-    lookups: {
-      accessProfiles: accessProfiles as AccessProfile[],
-    },
+  } catch (error) {
+    console.error('Error fetching user registration data:', error)
+    return null
   }
 }
 
+/**
+ * Deleta um usuário via API.
+ */
 export async function deleteUserAction(id: string | number): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
+  const session = await getSession()
+  if (!session?.apiToken) return { success: false, message: 'Sessão expirada.' }
 
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canDelete = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'delete',
-  )
-
-  if (!canDelete) {
+  if (!(await hasPermission('user_registration', 'delete'))) {
     return { success: false, message: 'Sem permissão para deletar.' }
   }
 
   try {
-    const allUsers = [...(users as User[])]
-    const index = allUsers.findIndex(u => u.id.toString() === id.toString())
+    const response = await fetch(`${API_URL}/users/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.apiToken}` },
+    })
 
-    if (index === -1) {
-      return { success: false, message: 'Usuário não encontrado.' }
-    }
+    if (!response.ok) return { success: false, message: 'Erro ao deletar usuário na API.' }
 
-    allUsers[index] = {
-      ...allUsers[index],
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
     revalidatePath('/')
-
     return { success: true, message: 'Usuário removido com sucesso.' }
   } catch (error) {
     console.error('Erro ao deletar usuário:', error)
-    return { success: false, message: 'Erro ao processar a exclusão.' }
+    return { success: false, message: 'Erro de conexão com o servidor.' }
   }
 }
 
-export async function updateUserAction(
+/**
+ * Cria ou atualiza um usuário via API (Upsert).
+ */
+export async function upsertUserAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canUpdate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'update',
-  )
-
-  if (!canUpdate) {
-    return { success: false, message: 'Sem permissão para atualizar.' }
-  }
+  const session = await getSession()
+  if (!session?.apiToken) return { success: false, message: 'Sessão expirada.' }
 
   const id = formData.get('id') as string
   const name = formData.get('name') as string
   const email = formData.get('email') as string
-  const accessProfileId = Number(formData.get('access_profile_id'))
-  const isActive = formData.get('is_active') === 'on'
-
-  if (!id || !name || !email || !accessProfileId) {
-    return { success: false, message: 'Preencha todos os campos obrigatórios.' }
-  }
-
-  try {
-    const allUsers = [...(users as User[])]
-    const index = allUsers.findIndex(u => u.id.toString() === id.toString())
-
-    if (index === -1) {
-      return { success: false, message: 'Usuário não encontrado.' }
-    }
-
-    allUsers[index] = {
-      ...allUsers[index],
-      name,
-      email,
-      access_profile_id: accessProfileId,
-      is_active: isActive,
-      updated_at: new Date().toISOString(),
-    }
-
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
-    revalidatePath('/')
-
-    return { success: true, message: 'Usuário atualizado com sucesso.' }
-  } catch (error) {
-    console.error('Erro ao atualizar usuário:', error)
-    return { success: false, message: 'Erro ao salvar as alterações.' }
-  }
-}
-
-export async function createUserAction(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
-    return { success: false, message: 'Sessão expirada.' }
-  }
-
-  const canCreate = payload.accessProfile?.accesses?.some(
-    (a: Access) => a.screen_key === 'user_registration' && a.permission_key === 'create',
-  )
-
-  if (!canCreate) {
-    return { success: false, message: 'Sem permissão para criar usuários.' }
-  }
-
-  const name = formData.get('name') as string
-  const email = formData.get('email') as string
-  const accessProfileId = Number(formData.get('access_profile_id'))
-  const isActive = formData.get('is_active') === 'on'
+  const accessProfileId = formData.get('access_profile_id') as string
+  const isActive = formData.get('isActive') === 'on'
 
   if (!name || !email || !accessProfileId) {
     return { success: false, message: 'Preencha todos os campos obrigatórios.' }
   }
 
+  const isUpdate = !!id
+  const permissionKey = isUpdate ? 'update' : 'create'
+
+  if (!(await hasPermission('user_registration', permissionKey))) {
+    return { success: false, message: 'Sem permissão para esta ação.' }
+  }
+
   try {
-    const allUsers = [...(users as User[])]
-
-    // Gerar ID sequencial
-    const nextId = allUsers.length > 0 ? Math.max(...allUsers.map(u => Number(u.id))) + 1 : 1
-
-    // Gerar senha aleatória (8 caracteres)
-    const randomPassword = Math.random().toString(36).slice(-8)
-
-    // Buscar o client_id do usuário logado para associar o novo usuário
-    const currentUser = allUsers.find(u => u.id.toString() === payload.userId.toString())
-    if (!currentUser) return { success: false, message: 'Usuário logado não encontrado.' }
-
-    const newUser: User = {
-      id: nextId,
+    const payload = {
       name,
       email,
-      password: randomPassword, // Em produção, usar hash
-      client_id: currentUser.client_id,
-      is_active: isActive,
-      access_profile_id: accessProfileId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
+      accessProfileId,
+      isActive,
     }
 
-    allUsers.push(newUser)
+    const url = isUpdate ? `${API_URL}/users/${id}` : `${API_URL}/users`
+    const method = isUpdate ? 'PUT' : 'POST'
 
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.apiToken}`,
+      },
+      body: JSON.stringify(payload),
+    })
 
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
-
-    // TODO: Em produção, o envio de e-mail de boas-vindas deve ser feito pela API C#
-    console.log(`[PROTOTYPE] Usuário criado: ${email}. Senha temporária: ${randomPassword}`)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return { success: false, message: errorData.message || 'Erro ao salvar usuário na API.' }
+    }
 
     revalidatePath('/')
-
-    return { success: true, message: 'Usuário criado com sucesso. E-mail enviado com a senha.' }
+    return {
+      success: true,
+      message: `Usuário ${isUpdate ? 'atualizado' : 'criado'} com sucesso.`,
+    }
   } catch (error) {
-    console.error('Erro ao criar usuário:', error)
-    return { success: false, message: 'Erro ao criar o usuário.' }
+    console.error('Error upserting user:', error)
+    return { success: false, message: 'Erro de conexão com o servidor.' }
   }
 }

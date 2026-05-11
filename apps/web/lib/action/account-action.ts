@@ -1,54 +1,48 @@
 'use server'
 
-import { cookies } from 'next/headers'
-import { decrypt, createSession } from '@/lib/session'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import users from '@/data/users.json'
-import accessProfiles from '@/data/access-profile.json'
-import { User, ActionState, AccessProfile } from '@/types'
+import { getSession } from '@/lib/session'
+import { ActionState } from '@/types'
 import { revalidatePath } from 'next/cache'
 
-const USERS_FILE_PATH = path.join(process.cwd(), 'data/users.json')
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+/**
+ * Busca dados da conta do usuário logado via API.
+ */
 export async function getAccountData() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
+  const session = await getSession()
+  if (!session?.apiToken) return null
 
-  if (!payload || !payload.userId) {
+  try {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${session.apiToken}` },
+    })
+
+    if (!response.ok) return null
+    const data = await response.json()
+
+    return {
+      user: {
+        name: data.name,
+        email: data.email,
+      },
+      profileName: data.accessProfileName || 'N/A',
+    }
+  } catch (error) {
+    console.error('Error fetching account data:', error)
     return null
-  }
-
-  const user = (users as User[]).find(u => u.id.toString() === payload.userId.toString())
-  if (!user) return null
-
-  const profile = (accessProfiles as AccessProfile[]).find(
-    p =>
-      p.id ===
-      (typeof user.access_profile_id === 'number'
-        ? user.access_profile_id
-        : user.access_profile_id.id),
-  )
-
-  return {
-    user: {
-      name: user.name,
-      email: user.email,
-    },
-    profileName: profile?.name || 'N/A',
   }
 }
 
+/**
+ * Atualiza os dados da conta do usuário via API.
+ */
 export async function updateAccountAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('session')?.value
-  const payload = await decrypt(session)
-
-  if (!payload || !payload.userId) {
+  const session = await getSession()
+  if (!session?.apiToken) {
     return { success: false, message: 'Sessão expirada.' }
   }
 
@@ -60,30 +54,23 @@ export async function updateAccountAction(
   }
 
   try {
-    const allUsers = [...(users as User[])]
-    const index = allUsers.findIndex(u => u.id.toString() === payload.userId.toString())
+    const response = await fetch(`${API_URL}/auth/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.apiToken}`,
+      },
+      body: JSON.stringify({ name, email }),
+    })
 
-    if (index === -1) {
-      return { success: false, message: 'Usuário não encontrado.' }
+    if (!response.ok) {
+      return { success: false, message: 'Erro ao atualizar os dados na API.' }
     }
-
-    allUsers[index] = {
-      ...allUsers[index],
-      name,
-      email,
-      updated_at: new Date().toISOString(),
-    }
-
-    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
-
-    // Renova a sessão para garantir que os dados estejam atualizados
-    await createSession(payload.userId, payload.domain, payload.apiToken, payload.accessProfile)
 
     revalidatePath('/')
-
     return { success: true, message: 'Dados atualizados com sucesso.' }
   } catch (error) {
     console.error('Erro ao salvar conta:', error)
-    return { success: false, message: 'Erro ao salvar as alterações.' }
+    return { success: false, message: 'Erro de conexão com o servidor.' }
   }
 }

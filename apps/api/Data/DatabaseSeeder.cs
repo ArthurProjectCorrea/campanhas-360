@@ -43,7 +43,38 @@ public static class DatabaseSeeder
                 await context.SaveChangesAsync();
             }
 
-            // 3. Seed Access Profile
+            // 3. Seed Screens
+            if (!await context.Screens.AnyAsync())
+            {
+                logger.LogInformation("Semeando telas (Screens)...");
+                var screens = new List<Screen>
+                {
+                    new Screen { Id = 1, Key = "dashboard", Title = "Dashboard Executivo", Description = "Visão geral da campanha", Sidebar = "Dashboard", Icon = "layout-dashboard" },
+                    new Screen { Id = 2, Key = "regional_planning", Title = "Planejamento Regional", Description = "Gestão de zonas eleitorais e roteiros", Sidebar = "Planejamento", Icon = "square-chart-gantt" },
+                    new Screen { Id = 3, Key = "organization_profile", Title = "Perfil da Organização", Description = "Controle de dados da Organização", Sidebar = "Organização", Icon = "landmark" },
+                    new Screen { Id = 4, Key = "user_registration", Title = "Cadastro de Usuários", Description = "Cadastro e gerenciamento de usuários", Sidebar = "Usuários", Icon = "users" },
+                    new Screen { Id = 5, Key = "access_profile", Title = "Perfil de Acesso", Description = "Gerencie as permissões e configurações deste perfil.", Sidebar = "Perfis de Acesso", Icon = "fingerprint-pattern" }
+                };
+                context.Screens.AddRange(screens);
+                await context.SaveChangesAsync();
+            }
+
+            // 4. Seed Permissions
+            if (!await context.Permissions.AnyAsync())
+            {
+                logger.LogInformation("Semeando permissões (Permissions)...");
+                var permissions = new List<Permission>
+                {
+                    new Permission { Id = 1, Key = "view", Name = "Visualizar" },
+                    new Permission { Id = 2, Key = "update", Name = "Atualizar" },
+                    new Permission { Id = 3, Key = "delete", Name = "Deletar" },
+                    new Permission { Id = 4, Key = "create", Name = "Criar" }
+                };
+                context.Permissions.AddRange(permissions);
+                await context.SaveChangesAsync();
+            }
+
+            // 5. Seed Access Profile
             var profile = await context.AccessProfiles.FirstOrDefaultAsync(p => p.Name == "Administrador" && p.ClientId == client.Id);
             if (profile == null)
             {
@@ -57,6 +88,44 @@ public static class DatabaseSeeder
                     CreatedAt = DateTime.UtcNow
                 };
                 context.AccessProfiles.Add(profile);
+                await context.SaveChangesAsync();
+            }
+
+            // Garantir que o Administrador tenha as permissões corretas
+            if (!await context.Accesses.AnyAsync(a => a.AccessProfileId == profile.Id))
+            {
+                logger.LogInformation("Concedendo permissões mapeadas ao perfil Administrador...");
+                var allScreens = await context.Screens.ToListAsync();
+                var allPermissions = await context.Permissions.ToListAsync();
+
+                var mappings = new Dictionary<string, string[]>
+                {
+                    { "dashboard", new[] { "view" } },
+                    { "regional_planning", new[] { "view", "update", "create", "delete" } },
+                    { "organization_profile", new[] { "view", "update", "create", "delete" } },
+                    { "user_registration", new[] { "view", "update", "create", "delete" } },
+                    { "access_profile", new[] { "view", "update", "create", "delete" } }
+                };
+
+                foreach (var screen in allScreens)
+                {
+                    if (mappings.TryGetValue(screen.Key, out var validPermissions))
+                    {
+                        foreach (var pKey in validPermissions)
+                        {
+                            var permission = allPermissions.FirstOrDefault(p => p.Key == pKey);
+                            if (permission != null)
+                            {
+                                context.Accesses.Add(new Access
+                                {
+                                    AccessProfileId = profile.Id,
+                                    ScreenId = screen.Id,
+                                    PermissionId = permission.Id
+                                });
+                            }
+                        }
+                    }
+                }
                 await context.SaveChangesAsync();
             }
 

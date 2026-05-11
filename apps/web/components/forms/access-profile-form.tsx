@@ -26,7 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FormButtons } from '@/components/layout/form-button'
-import { createAccessProfile, updateAccessProfile } from '@/lib/action/access-profile-action'
+import { upsertAccessProfileAction } from '@/lib/action/access-profile-action'
 import { AccessProfile, Screen, Permission, ActionState, Access } from '@/types'
 
 interface AccessProfileFormProps {
@@ -60,14 +60,10 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
 
   // Estado para controlar as permissões selecionadas (Matriz)
   const [selectedPermissions, setSelectedPermissions] = useState<
-    { screen_id: number; permission_id: number }[]
-  >(
-    initialData?.accesses.map(a => ({ screen_id: a.screen_id, permission_id: a.permission_id })) ||
-      [],
-  )
+    { screenId: number; permissionId: number }[]
+  >(initialData?.accesses?.map(a => ({ screenId: a.screenId, permissionId: a.permissionId })) || [])
 
-  const action = mode === 'create' ? createAccessProfile : updateAccessProfile
-  const [state, formAction, isPending] = useActionState(action, initialState)
+  const [state, formAction, isPending] = useActionState(upsertAccessProfileAction, initialState)
 
   useEffect(() => {
     if (state.message) {
@@ -84,17 +80,17 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
     if (mode === 'view') return
 
     setSelectedPermissions(prev => {
-      const exists = prev.find(p => p.screen_id === screenId && p.permission_id === permissionId)
+      const exists = prev.find(p => p.screenId === screenId && p.permissionId === permissionId)
       if (exists) {
-        return prev.filter(p => !(p.screen_id === screenId && p.permission_id === permissionId))
+        return prev.filter(p => !(p.screenId === screenId && p.permissionId === permissionId))
       }
-      return [...prev, { screen_id: screenId, permission_id: permissionId }]
+      return [...prev, { screenId: screenId, permissionId: permissionId }]
     })
   }
 
   const isChecked = (screenId: number, permissionId: number) => {
     return !!selectedPermissions.find(
-      p => p.screen_id === screenId && p.permission_id === permissionId,
+      p => p.screenId === screenId && p.permissionId === permissionId,
     )
   }
 
@@ -106,9 +102,9 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
     if (formRef.current) {
       formRef.current.reset()
       setSelectedPermissions(
-        initialData?.accesses.map(a => ({
-          screen_id: a.screen_id,
-          permission_id: a.permission_id,
+        initialData?.accesses?.map(a => ({
+          screenId: a.screenId,
+          permissionId: a.permissionId,
         })) || [],
       )
       setResetKey(prev => prev + 1)
@@ -117,6 +113,16 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
 
   // Filtrar telas para remover as globais
   const visibleScreens = lookups.screens.filter(screen => !GLOBAL_PERMISSIONS_MAPPING[screen.key])
+
+  // Ordenar permissões por nível de importância: view (0), create (1), update (2), delete (3)
+  const sortedPermissions = React.useMemo(() => {
+    const weights: Record<string, number> = { view: 0, create: 1, update: 2, delete: 3 }
+    return [...lookups.permissions].sort((a, b) => {
+      const weightA = weights[a.key] ?? 99
+      const weightB = weights[b.key] ?? 99
+      return weightA - weightB
+    })
+  }, [lookups.permissions])
 
   // Preparar permissões para envio (incluindo as globais)
   const handleSubmit = (formData: FormData) => {
@@ -130,10 +136,10 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
           const permission = lookups.permissions.find(p => p.key === pKey)
           if (permission) {
             const alreadyExists = permissionsWithGlobals.some(
-              p => p.screen_id === screen.id && p.permission_id === permission.id,
+              p => p.screenId === screen.id && p.permissionId === permission.id,
             )
             if (!alreadyExists) {
-              permissionsWithGlobals.push({ screen_id: screen.id, permission_id: permission.id })
+              permissionsWithGlobals.push({ screenId: screen.id, permissionId: permission.id })
             }
           }
         })
@@ -182,7 +188,7 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
               </Field>
 
               <FieldGroup>
-                <FieldLabel htmlFor="is_active">
+                <FieldLabel htmlFor="isActive">
                   <Field orientation="horizontal">
                     <FieldContent>
                       <FieldTitle>Perfil Ativo</FieldTitle>
@@ -191,9 +197,9 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
                       </FieldDescription>
                     </FieldContent>
                     <Switch
-                      id="is_active"
-                      name="is_active"
-                      defaultChecked={initialData ? initialData.is_active : true}
+                      id="isActive"
+                      name="isActive"
+                      defaultChecked={initialData ? initialData.isActive : true}
                       disabled={disabled}
                     />
                   </Field>
@@ -218,7 +224,7 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-full">Tela</TableHead>
-                      {lookups.permissions.map(permission => (
+                      {sortedPermissions.map(permission => (
                         <TableHead
                           key={permission.id}
                           className="text-center w-24 min-w-[96px] whitespace-nowrap"
@@ -239,7 +245,7 @@ export function AccessProfileForm({ initialData, lookups, mode, domain }: Access
                             </span>
                           </div>
                         </TableCell>
-                        {lookups.permissions.map(permission => {
+                        {sortedPermissions.map(permission => {
                           const isAllowed = isPermissionAllowed(screen.key, permission.key)
                           return (
                             <TableCell

@@ -1,5 +1,4 @@
 import { PageHeader } from '@/components/layout/page-header'
-import { redirect } from 'next/navigation'
 
 export default async function RegionalPlanningDetailPage({
   params,

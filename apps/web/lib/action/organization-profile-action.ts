@@ -9,12 +9,13 @@ import clients from '@/data/clients.json'
 import positions from '@/data/positions.json'
 import parties from '@/data/party.json'
 import municipalities from '@/data/municipalities.json'
-import screens from '@/data/screens.json'
 import candidates from '@/data/candidates.json'
 import campaigns from '@/data/campaigns.json'
 import { User, Client, ActionState, Screen, Access, Candidate, Campaign } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { forbidden } from 'next/navigation'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 const CLIENTS_FILE_PATH = path.join(process.cwd(), 'data/clients.json')
 const CANDIDATES_FILE_PATH = path.join(process.cwd(), 'data/candidates.json')
@@ -79,11 +80,15 @@ export async function getOrganizationData() {
   )
   const canDelete = payload.accessProfile?.accesses?.some(
     (a: Access) =>
-      (a.screen_key === 'organization_profile' || a.screen_id === 3) &&
-      (a.permission_key === 'delete' || a.permission_id === 3),
+      (a.screen_key === 'organization_profile' || a.screenId === 3 || a.screen_id === 3) &&
+      (a.permissionKey === 'delete' || a.permissionId === 3 || a.permission_id === 3),
   )
 
-  const screen = (screens as Screen[]).find(s => s.key === 'organization_profile')
+  const screensRes = await fetch(`${API_URL}/screens`, {
+    headers: { Authorization: `Bearer ${payload.apiToken}` },
+  })
+  const screens = (await screensRes.json()) as Screen[]
+  const screen = screens.find(s => s.key === 'organization_profile')
 
   return {
     client: clientWithAvatar,

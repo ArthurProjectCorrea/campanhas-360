@@ -4,11 +4,7 @@ import { OrganizationProfileTable } from '@/components/tables/organization-profi
 import { getOrganizationData } from '@/lib/action/organization-profile-action'
 import { redirect } from 'next/navigation'
 
-export default async function OrganizationProfilePage({
-  params,
-}: {
-  params: Promise<{ domain: string }>
-}) {
+export default async function OrganizationProfilePage() {
   const data = await getOrganizationData()
 
   if (!data) {

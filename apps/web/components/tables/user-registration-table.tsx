@@ -69,17 +69,19 @@ export function UserRegistrationTable({
         },
       },
       {
-        accessorKey: 'access_profile_name',
+        id: 'access_profile_name',
+        accessorFn: row => row.accessProfileName || row.access_profile_name,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Perfil de Acesso" />,
         meta: {
           title: 'Perfil de Acesso',
         },
       },
       {
-        accessorKey: 'is_active',
+        id: 'status',
+        accessorFn: row => (row.isActive !== undefined ? row.isActive : row.is_active),
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-          const isActive = row.getValue('is_active') as boolean
+          const isActive = row.getValue('status') as boolean
           return (
             <Badge variant={isActive ? 'default' : 'secondary'}>
               {isActive ? 'Ativo' : 'Inativo'}
@@ -91,7 +93,8 @@ export function UserRegistrationTable({
         },
       },
       {
-        accessorKey: 'created_at',
+        id: 'created_at',
+        accessorFn: row => row.createdAt || row.created_at,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Criado em" />,
         cell: ({ row }) => {
           const dateString = row.getValue('created_at') as string

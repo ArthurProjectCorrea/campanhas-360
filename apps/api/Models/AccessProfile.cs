@@ -15,4 +15,5 @@ public class AccessProfile
     public DateTime? DeletedAt { get; set; }
 
     public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
+    public ICollection<Access> Accesses { get; set; } = new List<Access>();
 }

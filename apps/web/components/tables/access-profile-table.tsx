@@ -23,7 +23,7 @@ interface AccessProfileTableProps {
 }
 
 export function AccessProfileTable({
-  data,
+  data = [],
   canUpdate = false,
   canDelete = false,
   canCreate = false,

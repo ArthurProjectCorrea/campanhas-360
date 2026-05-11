@@ -25,7 +25,7 @@ interface UserRegistrationTableProps {
 }
 
 export function UserRegistrationTable({
-  data,
+  data = [],
   canUpdate = false,
   canDelete = false,
   canCreate = false,

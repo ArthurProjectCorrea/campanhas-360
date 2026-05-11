@@ -20,29 +20,30 @@ export async function getUserRegistrationData() {
   }
 
   try {
-    const [usersRes, profilesRes, screensRes] = await Promise.all([
-      fetch(`${API_URL}/users`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+    const [usersRes, profilesRes] = await Promise.all([
+      fetch(`${API_URL}/users`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+        next: { revalidate: 0 },
+      }),
       fetch(`${API_URL}/access-profiles`, {
         headers: { Authorization: `Bearer ${session.apiToken}` },
+        next: { revalidate: 0 },
       }),
-      fetch(`${API_URL}/screens`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
     ])
 
     if (!usersRes.ok || !profilesRes.ok) return null
 
-    const usersData = await usersRes.json()
-    const profiles = await profilesRes.json()
-    const screens = await screensRes.json()
-    const screen = screens.find((s: Screen) => s.key === 'user_registration')
+    const usersResponse = await usersRes.json()
+    const profilesResponse = await profilesRes.json()
 
     return {
-      users: usersData,
-      screen,
+      users: usersResponse.data,
+      screen: usersResponse.screen,
       canCreate: await hasPermission('user_registration', 'create'),
       canUpdate: await hasPermission('user_registration', 'update'),
       canDelete: await hasPermission('user_registration', 'delete'),
       lookups: {
-        accessProfiles: profiles as AccessProfile[],
+        accessProfiles: profilesResponse.data as AccessProfile[],
       },
     }
   } catch (error) {

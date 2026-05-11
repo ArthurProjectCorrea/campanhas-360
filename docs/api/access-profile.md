@@ -61,10 +61,29 @@ A API gerencia automaticamente a hierarquia **Multi-tenant**. O `ClientId` não 
 ### 1. Listar Perfis de Acesso
 `GET /access-profiles`
 
-Retorna todos os perfis vinculados ao `ClientId` do usuário autenticado que não foram excluídos logicamente.
+Retorna todos os perfis vinculados ao `ClientId` do usuário autenticado que não foram excluídos logicamente, junto com os metadados da tela.
+
+**Estrutura de Resposta:**
+```json
+{
+  "screen": {
+    "title": "Perfis de Acesso",
+    "description": "Gerencie as permissões e níveis de acesso do sistema."
+  },
+  "data": [
+    {
+      "id": "guid",
+      "name": "Administrador",
+      "isActive": true,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
 
 > [!IMPORTANT]
-> A consulta ao banco deve obrigatoriamente incluir um filtro `WHERE ClientId = @UserClientId` para evitar vazamento de dados entre organizações.
+> A consulta ao banco deve obrigatoriamente incluir um filtro `WHERE ClientId = @UserClientId` para evitar vazamento de dados entre organizações. A API deve buscar os metadados da tela `access_profile`.
 
 ---
 

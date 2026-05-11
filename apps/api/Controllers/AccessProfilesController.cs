@@ -4,21 +4,21 @@ using Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
-using System.Text.Json;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("access-profiles")]
-public class AccessProfilesController : ControllerBase
+public class AccessProfilesController : BaseApiController
 {
     private readonly ApplicationDbContext _context;
-    private readonly IDatabase _redis;
 
-    public AccessProfilesController(ApplicationDbContext context, IConnectionMultiplexer redis)
+    public AccessProfilesController(ApplicationDbContext context, IConnectionMultiplexer redis) : base(context, redis)
     {
         _context = context;
-        _redis = redis.GetDatabase();
     }
 
     [HttpGet]
@@ -29,6 +29,8 @@ public class AccessProfilesController : ControllerBase
 
         if (!HasPermission(session, "access_profile", "view"))
             return Forbid();
+
+        var screen = await GetScreenMetadataAsync("access_profile");
 
         var profiles = await _context.AccessProfiles
             .Where(p => p.ClientId == session.ClientId && p.DeletedAt == null)
@@ -43,7 +45,7 @@ public class AccessProfilesController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(profiles);
+        return Ok(new { screen, data = profiles });
     }
 
     [HttpGet("{id}")]
@@ -168,32 +170,5 @@ public class AccessProfilesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
-    }
-
-    private async Task<SessionData?> GetSessionAsync()
-    {
-        var authHeader = Request.Headers["Authorization"].ToString();
-        var token = authHeader.Replace("Bearer ", "").Trim();
-
-        if (string.IsNullOrEmpty(token)) return null;
-
-        var json = await _redis.StringGetAsync(token);
-        if (json.IsNullOrEmpty) return null;
-
-        return JsonSerializer.Deserialize<SessionData>((string)json!);
-    }
-
-    private bool HasPermission(SessionData session, string screenKey, string permissionKey)
-    {
-        // Se for o perfil Administrador (ou tiver todas as permissões), permitimos tudo por simplicidade no momento
-        // Ou verificamos a matriz exata
-        return session.Permissions.Any(p => p.Screen == screenKey && p.Key == permissionKey);
-    }
-
-    private class SessionData
-    {
-        public Guid UserId { get; set; }
-        public Guid ClientId { get; set; }
-        public List<UserPermissionDto> Permissions { get; set; } = new();
     }
 }

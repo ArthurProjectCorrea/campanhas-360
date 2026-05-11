@@ -23,22 +23,21 @@ export async function getAccessProfileData() {
     const [profilesRes, screensRes, permissionsRes] = await Promise.all([
       fetch(`${API_URL}/access-profiles`, {
         headers: { Authorization: `Bearer ${session.apiToken}` },
-        next: { tags: ['access-profiles'] },
+        next: { tags: ['access-profiles'], revalidate: 0 },
       }),
-      // Nota: Telas e Permissões poderiam ser endpoints públicos ou cacheados
       fetch(`${API_URL}/screens`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
       fetch(`${API_URL}/permissions`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
     ])
 
     if (!profilesRes.ok) return null
 
+    const profilesResponse = await profilesRes.json()
     const screens = (await screensRes.json()) as Screen[]
     const permissions = (await permissionsRes.json()) as Permission[]
-    const screen = screens.find(s => s.key === 'access_profile')
 
     return {
-      accessProfiles: await profilesRes.json(),
-      screen,
+      accessProfiles: profilesResponse.data,
+      screen: profilesResponse.screen,
       canCreate: await hasPermission('access_profile', 'create'),
       canUpdate: await hasPermission('access_profile', 'update'),
       canDelete: await hasPermission('access_profile', 'delete'),

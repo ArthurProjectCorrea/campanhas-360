@@ -18,7 +18,12 @@ var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION
     ?? "localhost:6379";
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebClient", policy =>

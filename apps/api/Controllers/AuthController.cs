@@ -92,7 +92,11 @@ public class AuthController : ControllerBase
             Permissions = permissions
         };
 
-        await _redis.StringSetAsync(token, JsonSerializer.Serialize(sessionData), TimeSpan.FromHours(1));
+        await _redis.StringSetAsync(token, JsonSerializer.Serialize(sessionData, BaseApiController.JsonOptions), TimeSpan.FromHours(1));
+
+        // 9.1. Adicionar token ao set de sessões do usuário para permitir invalidação global
+        await _redis.SetAddAsync($"user_tokens:{user.Id}", token);
+        await _redis.KeyExpireAsync($"user_tokens:{user.Id}", TimeSpan.FromHours(1));
 
         // 10. Retorna dados e token
         return Ok(new SignInResponse(
@@ -128,10 +132,14 @@ public class AuthController : ControllerBase
         }
 
         // 2. Invalida a sessão no redis
-        var exists = await _redis.KeyExistsAsync(token);
-        if (!exists)
+        var json = await _redis.StringGetAsync(token);
+        if (!json.IsNullOrEmpty)
         {
-            return Unauthorized(new { message = "Sessão inválida ou expirada" });
+            var session = JsonSerializer.Deserialize<BaseApiController.SessionData>((string)json!, BaseApiController.JsonOptions);
+            if (session != null)
+            {
+                await _redis.SetRemoveAsync($"user_tokens:{session.UserId}", token);
+            }
         }
 
         await _redis.KeyDeleteAsync(token);

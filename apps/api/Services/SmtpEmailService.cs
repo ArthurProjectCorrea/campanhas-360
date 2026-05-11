@@ -67,6 +67,26 @@ public class SmtpEmailService : IEmailService
                 <hr />
                 <p style='font-size: 12px; color: #666;'>Se você não solicitou esta alteração, ignore este e-mail.</p>
             </div>";
+        await SendEmailAsync(to, subject, body);
+    }
+
+    public async Task SendWelcomeEmailAsync(string to, string userName, string password)
+    {
+        var subject = "Bem-vindo ao Campanhas 360!";
+        var body = $@"
+            <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto;'>
+                <h2 style='color: #2563eb;'>Olá, {userName}!</h2>
+                <p>Sua conta no <strong>Campanhas 360</strong> foi criada com sucesso.</p>
+                <p>Abaixo estão suas credenciais de acesso:</p>
+                <div style='background: #f4f4f4; padding: 20px; border-radius: 8px;'>
+                    <p style='margin: 5px 0;'><strong>Login:</strong> {to}</p>
+                    <p style='margin: 5px 0;'><strong>Senha Temporária:</strong> <span style='font-family: monospace; background: #fff; padding: 2px 4px; border: 1px solid #ddd;'>{password}</span></p>
+                </div>
+                <p style='margin-top: 20px;'>Recomendamos que você altere sua senha no seu primeiro acesso.</p>
+                <p>Acesse o sistema em: <a href='https://campanhas360.com' style='color: #2563eb;'>campanhas360.com</a></p>
+                <hr />
+                <p style='font-size: 12px; color: #666;'>Se você não reconhece este cadastro, entre em contato com nosso suporte.</p>
+            </div>";
 
         await SendEmailAsync(to, subject, body);
     }

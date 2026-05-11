@@ -26,3 +26,23 @@ public record SignInResponse(
     Guid AccessProfileId,
     string AccessProfileName
 );
+
+/// <summary>
+/// Solicitação de início de recuperação de senha.
+/// </summary>
+/// <param name="Email">E-mail do usuário.</param>
+public record ForgotPasswordRequest(string Email);
+
+/// <summary>
+/// Validação do código OTP enviado por e-mail.
+/// </summary>
+/// <param name="Email">E-mail do usuário.</param>
+/// <param name="Otp">Código de 6 dígitos.</param>
+public record VerifyOtpRequest(string Email, string Otp);
+
+/// <summary>
+/// Redefinição final da senha.
+/// </summary>
+/// <param name="ResetToken">Token temporário validado.</param>
+/// <param name="NewPassword">Nova senha do usuário.</param>
+public record ResetPasswordRequest(string ResetToken, string NewPassword);

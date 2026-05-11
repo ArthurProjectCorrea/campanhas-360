@@ -33,10 +33,16 @@ O objetivo técnico desta plataforma é fornecer uma infraestrutura escalável q
 ### 1.1. Escopo Funcional (Módulos)
 A solução é composta pelos seguintes pilares funcionais:
 
-1.  **Módulo de Autenticação e Segurança:** Gerenciamento de login, recuperação de senha e proteção de rotas baseada em permissões.
-2.  **Módulo de Perfil da Organização:** Gestão dos dados do candidato (nome, número, partido, cargo) e upload imediato de identidade visual.
-3.  **Módulo de Gestão de Equipe (User Registration):** Controle de colaboradores, vinculação a perfis de acesso e disparo automatizado de credenciais via e-mail.
-4.  **Módulo de Configurações de Conta:** Gerenciamento de dados pessoais do usuário logado e preferências de segurança.
+1.  **Módulo de Autenticação e Segurança:** Gerenciamento de login e recuperação de senha.
+    *   [ERS: Autenticação (API)](api/authentication.md) | [ERS: Autenticação (Web)](web/authentication.md)
+    *   [ERS: Recuperação de Senha (API)](api/password.md) | [ERS: Recuperação de Senha (Web)](web/password.md)
+2.  **Módulo de Perfil da Organização:** Gestão dos dados do candidato e identidade visual.
+    *   [ERS: Perfil da Organização (Web)](web/organization-profile.md)
+3.  **Módulo de Gestão de Equipe (User Registration):** Controle de colaboradores e RBAC.
+    *   [ERS: Gestão de Equipe (Web)](web/user-registration.md)
+    *   [ERS: Perfis de Acesso (Web)](web/access-profile.md)
+4.  **Módulo de Configurações de Conta:** Gerenciamento de dados pessoais.
+    *   [ERS: Minha Conta (Web)](web/account.md)
 
 ### 1.2. Perfis de Usuário
 *   **Administrador da Campanha:** Acesso total, incluindo gestão de usuários e configurações da organização.

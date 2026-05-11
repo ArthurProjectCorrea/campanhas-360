@@ -226,7 +226,7 @@ export async function updateOrganizationAction(
     await fs.writeFile(CLIENTS_FILE_PATH, JSON.stringify(allClients, null, 2))
     revalidatePath('/')
     return { success: true, message: 'Organização atualizada.' }
-  } catch (error) {
+  } catch {
     return { success: false, message: 'Erro ao salvar.' }
   }
 }
@@ -304,7 +304,7 @@ export async function createCampaignAction(
     await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
     revalidatePath('/')
     return { success: true, message: isActive ? 'Campanha criada e ativada.' : 'Campanha criada.' }
-  } catch (error) {
+  } catch {
     return { success: false, message: 'Erro ao criar.' }
   }
 }
@@ -385,7 +385,7 @@ export async function updateCampaignAction(
     await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
     revalidatePath('/')
     return { success: true, message: 'Campanha atualizada.' }
-  } catch (error) {
+  } catch {
     return { success: false, message: 'Erro ao salvar.' }
   }
 }
@@ -419,7 +419,7 @@ export async function deleteCampaignAction(formData: FormData): Promise<ActionSt
     await fs.writeFile(CAMPAIGNS_FILE_PATH, JSON.stringify(allCampaigns, null, 2))
     revalidatePath('/')
     return { success: true, message: 'Campanha excluída.' }
-  } catch (error) {
+  } catch {
     return { success: false, message: 'Erro ao excluir.' }
   }
 }

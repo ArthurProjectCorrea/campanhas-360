@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -20,7 +21,9 @@ interface VerifyOtpFormProps {
 }
 
 export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
-  const [otpValue, setOtpValue] = React.useState('')
+  const router = useRouter()
+  const [otpValue, setOtpValue] = useState('')
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const [state, formAction, isPending] = useActionState(verifyOtpAction, initialState)
   const [resendState, resendAction, isResending] = useActionState(
@@ -28,13 +31,20 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
     initialState,
   )
 
+  const isLoading = isPending || isRedirecting
   const isInvalid = state.success === false && !!state.message
 
   useEffect(() => {
+    if (state.success) {
+      setTimeout(() => setIsRedirecting(true), 0)
+      toast.success(state.message)
+      const timer = setTimeout(() => router.push('/reset-password'), 1500)
+      return () => clearTimeout(timer)
+    }
     if (state.message && !state.success) {
       toast.error(state.message)
     }
-  }, [state])
+  }, [state, router])
 
   useEffect(() => {
     if (resendState.message) {
@@ -69,7 +79,7 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
             <InputOTP
               id="otp"
               maxLength={6}
-              disabled={isPending}
+              disabled={isLoading}
               required
               value={otpValue}
               onChange={setOtpValue}
@@ -91,8 +101,8 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
             </InputOTP>
           </Field>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? (
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Spinner className="mr-2" />
                 Verificando...
@@ -111,7 +121,7 @@ export function VerifyOtpForm({ email }: VerifyOtpFormProps) {
             <input type="hidden" name="email" value={email} />
             <button
               type="submit"
-              disabled={isResending || isPending}
+              disabled={isResending || isLoading}
               className="font-medium text-primary hover:underline underline-offset-4 disabled:opacity-50 disabled:no-underline"
             >
               {isResending ? 'Enviando...' : 'Reenviar Código'}

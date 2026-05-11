@@ -6,46 +6,39 @@ Este módulo é responsável por garantir a segurança no acesso à API, gerenci
 
 O diagrama abaixo representa a estrutura de tabelas no banco de dados PostgreSQL, utilizando tipos nativos para garantir a integridade dos dados. A tabela de usuários segue o padrão **ASP.NET Core Identity**.
 
-```mermaid
-erDiagram
-    AspNetUsers {
-        guid Id PK
-        string Name
-        string Email
-        string PasswordHash
-        guid ClientId FK
-        guid AccessProfileId FK
-        boolean IsActive
-        datetime CreatedAt
-        datetime UpdatedAt
-        datetime DeletedAt
-    }
+```dbml
+Table AspNetUsers {
+  Id guid [pk]
+  Name string [not null]
+  Email string [not null]
+  PasswordHash string [not null]
+  ClientId guid [ref: > Clients.Id]
+  AccessProfileId guid [ref: > AccessProfiles.Id]
+  IsActive boolean [default: true]
+  CreatedAt timestamptz [default: 'now()']
+  UpdatedAt timestamptz
+  DeletedAt timestamptz
+}
 
-    Clients {
-        guid Id PK
-        string Name
-        string Domain
-        boolean IsActive
-        datetime CreatedAt
-        datetime UpdatedAt
-        datetime DeletedAt
-    }
+Table Clients {
+  Id guid [pk]
+  Name string [not null]
+  Domain string [not null]
+  IsActive boolean [default: true]
+  CreatedAt timestamptz [default: 'now()']
+  UpdatedAt timestamptz
+  DeletedAt timestamptz
+}
 
-    AccessProfiles {
-        guid Id PK
-        string Name
-        guid ClientId FK
-        boolean IsActive
-        datetime CreatedAt
-        datetime UpdatedAt
-        datetime DeletedAt
-    }
-
-
-
-    Clients ||--o{ AccessProfiles : "possui"
-    Clients ||--o{ AspNetUsers : "contém"
-    AccessProfiles ||--o{ AspNetUsers : "atribuído a"
+Table AccessProfiles {
+  Id guid [pk]
+  Name string [not null]
+  ClientId guid [ref: > Clients.Id]
+  IsActive boolean [default: true]
+  CreatedAt timestamptz [default: 'now()']
+  UpdatedAt timestamptz
+  DeletedAt timestamptz
+}
 ```
 
 ---

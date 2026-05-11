@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -15,14 +16,24 @@ import { ActionState } from '@/types'
 const initialState: ActionState = {}
 
 export function ForgotPasswordForm() {
+  const router = useRouter()
   const emailRef = React.useRef<HTMLInputElement>(null)
+  const [isRedirecting, setIsRedirecting] = React.useState(false)
   const [state, formAction, isPending] = useActionState(forgotPasswordAction, initialState)
 
+  const isLoading = isPending || isRedirecting
+
   useEffect(() => {
+    if (state.success) {
+      setTimeout(() => setIsRedirecting(true), 0)
+      toast.success(state.message)
+      const timer = setTimeout(() => router.push('/verify-otp'), 1500)
+      return () => clearTimeout(timer)
+    }
     if (state.message && !state.success) {
       toast.error(state.message)
     }
-  }, [state])
+  }, [state, router])
 
   return (
     <div className="grid gap-6">
@@ -43,12 +54,12 @@ export function ForgotPasswordForm() {
               type="email"
               placeholder="nome@exemplo.com"
               required
-              disabled={isPending}
+              disabled={isLoading}
             />
           </Field>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? (
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Spinner className="mr-2" />
                 Enviando...

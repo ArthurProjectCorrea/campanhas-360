@@ -4,7 +4,6 @@ import { cookies } from 'next/headers'
 import { decrypt } from '@/lib/session'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import nodemailer from 'nodemailer'
 import users from '@/data/users.json'
 import accessProfiles from '@/data/access-profile.json'
 import screens from '@/data/screens.json'
@@ -232,40 +231,10 @@ export async function createUserAction(
 
     await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
 
-    // Configura o transporte do nodemailer (MailHog)
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'localhost',
-      port: Number(process.env.SMTP_PORT) || 1025,
-      secure: false, // false para TLS
-      auth: process.env.SMTP_USER
-        ? {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          }
-        : undefined,
-    })
+    await fs.writeFile(USERS_FILE_PATH, JSON.stringify(allUsers, null, 2))
 
-    // Dispara o e-mail
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@campanha360.com.br',
-      to: email,
-      subject: 'Bem-vindo ao Campanhas 360 - Dados de Acesso',
-      text: `Olá ${name}, sua conta foi criada. Sua senha temporária é: ${randomPassword}`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0f172a;">Bem-vindo ao Campanhas 360</h2>
-          <p style="color: #475569;">Olá <strong>${name}</strong>, sua conta de acesso foi criada com sucesso.</p>
-          <p style="color: #475569;">Abaixo estão seus dados de acesso temporários:</p>
-          <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
-            <p style="margin: 0; color: #64748b;"><strong>E-mail:</strong> ${email}</p>
-            <p style="margin: 10px 0 0 0; color: #64748b;"><strong>Senha Temporária:</strong> <span style="color: #2563eb; font-weight: bold;">${randomPassword}</span></p>
-          </div>
-          <p style="color: #64748b; font-size: 14px;">Recomendamos que você altere sua senha após o primeiro acesso.</p>
-          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; text-align: center;">© 2026 Campanhas 360 - Todos os direitos reservados.</p>
-        </div>
-      `,
-    })
+    // TODO: Em produção, o envio de e-mail de boas-vindas deve ser feito pela API C#
+    console.log(`[PROTOTYPE] Usuário criado: ${email}. Senha temporária: ${randomPassword}`)
 
     revalidatePath('/')
 

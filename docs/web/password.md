@@ -1,68 +1,77 @@
-# Documento de Análise: Recuperação de Senha (End-to-End)
+# Documento de Análise: Recuperação de Senha (Web -> API Integration)
 
-## 1. Introdução
-O módulo de **Recuperação de Senha** do Campanhas 360 foi projetado para ser seguro, resiliente a ataques de enumeração e amigável ao usuário. O fluxo consiste em três etapas principais: Solicitação, Verificação e Redefinição.
+Este documento detalha a implementação do fluxo de recuperação de senha no Frontend (Next.js), integrando-se com os endpoints da API C#.
 
----
+## 1. Fluxo de Trabalho (Narrativa Web)
 
-## 2. Fluxo de Trabalho (Narrativa)
+O processo é orquestrado via **Server Actions** para garantir segurança e performance, evitando a exposição de chaves de API no cliente.
 
-### 2.1. Etapa 1: Solicitação (Forgot Password)
+### 1.1. Solicitação (Forgot Password)
 O usuário informa seu e-mail na tela de "Esqueceu sua senha?".
-- **Comportamento**: O sistema valida se o e-mail foi preenchido e busca o usuário na base.
-- **Segurança**: Se o e-mail não existir, o sistema simula um delay de processamento e retorna uma mensagem de sucesso genérica: *"Código enviado com sucesso!"*. Isso impede que invasores descubram quais e-mails estão cadastrados na plataforma.
-- **Persistência**: Um cookie seguro (`pending-email`) é criado para manter o contexto do e-mail nas próximas etapas sem expô-lo na URL.
+- **Componente**: `ForgotPasswordForm`
+- **Action**: `forgotPasswordAction(email)`
+- **Comportamento**: A Action faz uma chamada `POST` para o endpoint da API `/auth/forgot-password`.
+- **Feedback**: Independentemente se o e-mail existe, o usuário recebe uma mensagem de sucesso: *"Se o e-mail estiver cadastrado, você receberá um código em instantes."*.
+- **Estado**: O e-mail é salvo em um cookie temporário (`pending-email`) para uso na próxima etapa.
 
-### 2.2. Etapa 2: Verificação de Identidade (Verify OTP)
-O usuário recebe um código de 6 dígitos em seu e-mail (simulado via MailHog em desenvolvimento).
-- **Interface**: Utiliza o componente `InputOTP` para uma experiência de entrada premium. O e-mail do usuário é exibido de forma desabilitada para conferência.
-- **Validação**: O sistema verifica o código contra o arquivo `data/otps.json`.
-- **Segurança**: Mensagens de erro são genéricas (*"Código inválido ou expirado."*) para não revelar se o erro foi por expiração ou dígito incorreto.
-- **Transição**: Se bem-sucedido, o sistema gera um **JWT assinado** (`reset-token`) com validade de 15 minutos, permitindo o acesso à etapa final.
+### 1.2. Verificação de Identidade (Verify OTP)
+O usuário insere o código de 6 dígitos recebido.
+- **Componente**: `VerifyOtpForm` (utilizando `InputOTP` da shadcn/ui).
+- **Action**: `verifyOtpAction(otp)`
+- **Lógica**: A Action recupera o e-mail do cookie e chama o endpoint `/auth/verify-otp`.
+- **Transição**: Em caso de sucesso, o `resetToken` retornado pela API é armazenado em um cookie seguro (`reset-token`) com validade de 10 minutos. O usuário é então redirecionado para a tela de redefinição.
 
-### 2.3. Etapa 3: Redefinição de Senha (Reset Password)
-O usuário define sua nova credencial de acesso.
-- **Requisitos de Senha**: A senha deve conter no mínimo 8 caracteres, incluindo pelo menos um número e um caractere especial.
-- **Proteção de Rota**: Esta página é protegida via Middleware (`proxy.ts`). Tentativas de acesso direto sem o `reset-token` válido redirecionam o usuário de volta para o início do fluxo.
-- **Finalização**: Após a atualização bem-sucedida em `data/users.json`, todos os tokens temporários e cookies de contexto são destruídos, e o usuário é redirecionado para o Login.
-
----
-
-## 3. Detalhes Técnicos (Protótipo)
-
-### 3.1. Persistência de Dados
-- **OTPs**: Armazenados em `data/otps.json` com `email`, `code` e `expiresAt` (5 min).
-- **Usuários**: Atualizados em `data/users.json` (campo `password` e `updated_at`).
-
-### 3.2. Infraestrutura de E-mail
-- **MailHog**: Utilizado como servidor SMTP local (`localhost:1025`) para captura de e-mails em ambiente de desenvolvimento.
-- **Nodemailer**: Biblioteca utilizada para o disparo das mensagens com suporte a HTML e templates inline.
-
-### 3.3. Segurança de Tokens
-- **jose**: Biblioteca utilizada para geração e verificação de JWTs no lado do servidor (Edge Runtime compatível).
-- **Secrets**: Utiliza `SESSION_SECRET` para assinatura dos tokens de redefinição.
+### 1.3. Redefinição de Senha (Reset Password)
+O usuário define sua nova senha.
+- **Componente**: `ResetPasswordForm`
+- **Action**: `resetPasswordAction(newPassword)`
+- **Lógica**: A Action recupera o `resetToken` do cookie e envia para o endpoint `/auth/reset-password`.
+- **Finalização**: Se a API retornar sucesso, os cookies `pending-email` e `reset-token` são removidos e o usuário é redirecionado para a página de login com uma mensagem de sucesso.
 
 ---
 
-## 4. Requisitos para API Real
+## 2. Integração Técnica
 
-### 4.1. Migração de Provedor
-- Substituir o MailHog por um provedor transacional (Resend, SendGrid ou Amazon SES).
-- Configurar registros de DNS (SPF, DKIM, DMARC) para garantir a entregabilidade.
+### 2.1. Server Actions (lib/action/password-action.ts)
 
-### 4.2. Limitação de Abuso (Rate Limiting)
-- **Implementar**: Limites de 3 solicitações de código por hora por IP/E-mail.
-- **Implementar**: Limite de 5 tentativas de validação de OTP antes do bloqueio temporário do fluxo para aquele e-mail.
+Todas as comunicações com a API devem ser encapsuladas em Server Actions.
 
-### 4.3. Auditoria
-- Registrar logs de eventos: `PASSWORD_RESET_REQUESTED`, `OTP_VERIFIED_SUCCESS`, `PASSWORD_UPDATED`.
+```typescript
+// Exemplo de chamada para a API
+export async function forgotPasswordAction(formData: FormData) {
+  const email = formData.get("email");
+  const response = await fetch(`${process.env.API_URL}/auth/forgot-password`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    headers: { "Content-Type": "application/json" }
+  });
+  // ... tratamento de resposta e cookies
+}
+```
+
+### 2.2. Proteção de Rotas (proxy.ts)
+
+As rotas `/auth/verify-otp` e `/auth/reset-password` são protegidas via Middleware:
+- `/verify-otp`: Requer o cookie `pending-email`.
+- `/reset-password`: Requer o cookie `reset-token`.
+- Se os requisitos não forem atendidos, o usuário é redirecionado para `/auth/forgot-password`.
 
 ---
 
-## 5. Checklist de Produção
-- [x] Proteção contra enumeração de usuários (mensagens genéricas).
-- [x] Validação de força de senha no servidor.
-- [x] Proteção de rotas sensíveis via Middleware.
-- [ ] Implementar Rate Limiting.
-- [ ] Mudar para banco de dados relacional (Prisma/PostgreSQL).
-- [ ] Integrar com provedor de e-mail real.
+## 3. Segurança e UX
+
+- **InputOTP**: Experiência premium com feedback visual imediato para cada dígito.
+- **Zod Validation**: Validação rigorosa de e-mail e complexidade de senha no lado do cliente e do servidor (Server Action).
+- **Rate Limiting**: Além do limite da API, o Web implementa um "cool-down" no botão de "Reenviar Código" de 60 segundos.
+- **Feedback Amigável**: Uso de `sonner` para notificações de sucesso e erro.
+
+---
+
+## 4. Status da Implementação
+
+- [x] Implementação das chamadas `fetch` para a API C# em `lib/action/password-action.ts`.
+- [x] Configuração de cookies de fluxo (`pending-email`, `reset-token`).
+- [x] Sincronização de loading e transição suave entre etapas.
+- [x] Implementação de componentes de formulário (`InputOTP`, `InputPassword`).
+- [x] Proteção de rotas no Middleware (`proxy.ts`).
+- [x] Validação de integração com Mailhog (disparado pela API).

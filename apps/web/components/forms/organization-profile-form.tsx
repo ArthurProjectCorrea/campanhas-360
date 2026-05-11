@@ -16,13 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { InputUpload } from '@/components/custom/input-upload'
 import { updateOrganizationAction } from '@/lib/action/organization-profile-action'
@@ -42,7 +35,6 @@ const initialState: ActionState = {}
 
 export function OrganizationProfileForm({
   initialData,
-  lookups,
   canUpdate = true,
 }: OrganizationProfileFormProps) {
   const router = useRouter()

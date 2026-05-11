@@ -1,6 +1,7 @@
 using Api.Data;
 using Api.DTOs;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -17,15 +18,18 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _context;
     private readonly IDatabase _redis;
+    private readonly IEmailService _emailService;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
-        IConnectionMultiplexer redis)
+        IConnectionMultiplexer redis,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _context = context;
         _redis = redis.GetDatabase();
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -157,5 +161,102 @@ public class AuthController : ControllerBase
 
         // Retorna o JSON serializado diretamente do Redis
         return Content(sessionDataJson!, "application/json");
+    }
+
+    /// <summary>
+    /// Solicita o envio de um código OTP para recuperação de senha.
+    /// </summary>
+    /// <response code="200">Sempre retorna sucesso para evitar enumeração.</response>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null) return Ok(new { message = "Se o e-mail estiver cadastrado, você receberá um código em instantes." });
+
+        // Validar integridade da conta (User + Client + Profile ativos)
+        var client = await _context.Clients.FindAsync(user.ClientId);
+        var profile = await _context.AccessProfiles.FindAsync(user.AccessProfileId);
+
+        if (user.IsActive && client is { IsActive: true } && profile is { IsActive: true })
+        {
+            // Gerar OTP de 6 dígitos
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // Salvar no Redis (otp:email -> userId) por 5 minutos
+            await _redis.StringSetAsync($"otp:{user.Email}", user.Id.ToString(), TimeSpan.FromMinutes(5));
+            await _redis.StringSetAsync($"otp_code:{user.Email}", otp, TimeSpan.FromMinutes(5));
+
+            // Disparar e-mail
+            await _emailService.SendOtpEmailAsync(user.Email!, user.Name, otp);
+        }
+
+        return Ok(new { message = "Se o e-mail estiver cadastrado, você receberá um código em instantes." });
+    }
+
+    /// <summary>
+    /// Valida o código OTP e retorna um token de redefinição de senha.
+    /// </summary>
+    /// <response code="200">Código válido, retorna o resetToken.</response>
+    /// <response code="400">Código inválido ou expirado.</response>
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        var savedOtp = await _redis.StringGetAsync($"otp_code:{request.Email}");
+        if (savedOtp.IsNullOrEmpty || savedOtp != request.Otp)
+        {
+            return BadRequest(new { message = "Código inválido ou expirado." });
+        }
+
+        var userId = await _redis.StringGetAsync($"otp:{request.Email}");
+
+        // Gerar Reset Token
+        var resetToken = Guid.NewGuid().ToString();
+        await _redis.StringSetAsync($"reset_token:{resetToken}", userId!, TimeSpan.FromMinutes(10));
+
+        // Limpar OTP
+        await _redis.KeyDeleteAsync($"otp:{request.Email}");
+        await _redis.KeyDeleteAsync($"otp_code:{request.Email}");
+
+        return Ok(new { resetToken });
+    }
+
+    /// <summary>
+    /// Redefine a senha do usuário utilizando um token válido.
+    /// </summary>
+    /// <response code="200">Senha alterada com sucesso.</response>
+    /// <response code="400">Token inválido ou expirado.</response>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var userIdString = await _redis.StringGetAsync($"reset_token:{request.ResetToken}");
+        if (userIdString.IsNullOrEmpty)
+        {
+            return BadRequest(new { message = "Token de redefinição inválido ou expirado." });
+        }
+
+        var user = await _userManager.FindByIdAsync(userIdString!);
+        if (user == null)
+        {
+            return BadRequest(new { message = "Usuário não encontrado." });
+        }
+
+        // Remover senha antiga e adicionar a nova (ou usar ResetPassword se tivermos o token de identity)
+        // Como estamos usando nosso próprio fluxo de OTP, podemos usar RemovePassword e AddPassword
+        await _userManager.RemovePasswordAsync(user);
+        var result = await _userManager.AddPasswordAsync(user, request.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        }
+
+        // Limpar Token
+        await _redis.KeyDeleteAsync($"reset_token:{request.ResetToken}");
+
+        // Invalida todas as sessões ativas (Force Logout) - Opcional, mas recomendado
+        // Aqui precisaríamos de uma forma de rastrear todos os tokens de um usuário.
+        // Por enquanto, apenas deletamos o token de reset.
+
+        return Ok(new { message = "Senha redefinida com sucesso." });
     }
 }

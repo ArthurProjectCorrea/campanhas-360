@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -19,13 +20,23 @@ interface ResetPasswordFormProps {
 const initialState: ActionState = {}
 
 export function ResetPasswordForm({ email }: ResetPasswordFormProps) {
+  const router = useRouter()
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [state, formAction, isPending] = useActionState(resetPasswordAction, initialState)
 
+  const isLoading = isPending || isRedirecting
+
   useEffect(() => {
+    if (state.success) {
+      setTimeout(() => setIsRedirecting(true), 0)
+      toast.success(state.message)
+      const timer = setTimeout(() => router.push('/sign-in'), 1500)
+      return () => clearTimeout(timer)
+    }
     if (state.message && !state.success) {
       toast.error(state.message)
     }
-  }, [state])
+  }, [state, router])
 
   return (
     <div className="grid gap-6">
@@ -49,7 +60,7 @@ export function ResetPasswordForm({ email }: ResetPasswordFormProps) {
               name="password"
               placeholder="Digite a nova senha"
               required
-              disabled={isPending}
+              disabled={isLoading}
             />
           </Field>
 
@@ -60,12 +71,12 @@ export function ResetPasswordForm({ email }: ResetPasswordFormProps) {
               name="confirm_password"
               placeholder="Confirme a nova senha"
               required
-              disabled={isPending}
+              disabled={isLoading}
             />
           </Field>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? (
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Spinner className="mr-2" />
                 Redefinindo...

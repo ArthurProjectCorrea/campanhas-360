@@ -20,7 +20,14 @@ export default async function proxy(req: NextRequest) {
   const cookie = (await cookies()).get('session')?.value
   const session = await decrypt(cookie)
 
-  // Verifica token de reset para a rota /reset-password
+  // Verifica cookies de fluxo para recuperação de senha
+  if (path === '/verify-otp') {
+    const pendingEmail = (await cookies()).get('pending-email')?.value
+    if (!pendingEmail) {
+      return NextResponse.redirect(new URL('/forgot-password', req.nextUrl))
+    }
+  }
+
   if (path === '/reset-password') {
     const resetToken = (await cookies()).get('reset-token')?.value
     if (!resetToken) {

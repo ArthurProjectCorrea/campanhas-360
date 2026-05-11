@@ -14,6 +14,7 @@ A API é construída utilizando **ASP.NET Core Identity** para gerenciamento de 
 | **Banco de Dados** | PostgreSQL | Persistência de dados relacionais e estruturados. |
 | **Cache / Sessão** | Redis | Gerenciamento de sessões temporárias e dados de acesso rápido. |
 | **E-mail (Dev)** | Mailhog | Simulação e captura de e-mails em ambiente de desenvolvimento. |
+| **E-mail (Service)** | SMTP / Mailer | Serviço de disparo de notificações e recuperação de senha. |
 
 ## Configuração e Implantação
 
@@ -36,6 +37,9 @@ A conexão da API com os serviços externos deve ser realizada exclusivamente vi
 | `DB_CONNECTION_STRING` | String de conexão com o PostgreSQL. | `Host=postgres;Database=campanhas;...` |
 | `REDIS_CONNECTION_STRING` | Endereço de conexão com o Redis. | `redis:6379` |
 | `MAIL_HOST` | Host do servidor SMTP (Mailhog em dev). | `mailhog` |
+| `MAIL_PORT` | Porta do servidor SMTP. | `1025` |
+| `MAIL_USER` | Usuário do servidor SMTP (opcional). | `null` |
+| `MAIL_PASS` | Senha do servidor SMTP (opcional). | `null` |
 | `ADMIN_EMAIL` | E-mail inicial para o Seed do usuário admin. | `admin@exemplo.com` |
 | `ADMIN_PASSWORD` | Senha inicial para o Seed do usuário admin. | `Senha@12345` |
 

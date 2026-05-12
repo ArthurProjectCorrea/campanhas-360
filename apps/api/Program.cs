@@ -130,6 +130,15 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Swagger na raiz
 });
 
+// Ensure wwwroot exists for storage
+var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+if (!Directory.Exists(wwwrootPath))
+{
+    Directory.CreateDirectory(wwwrootPath);
+}
+
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
 app.UseCors("WebClient");
 app.UseRateLimiter();

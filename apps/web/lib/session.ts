@@ -141,8 +141,8 @@ export async function refreshSessionWithApi() {
       {
         id: data.accessProfileId,
         name: data.accessProfileName,
-        is_active: true,
-        client_id: data.clientId,
+        isActive: true,
+        clientId: data.clientId,
       },
       data.permissions,
     )

@@ -20,15 +20,21 @@ public record UpsertUserRequest(
 );
 
 /// <summary>
-/// Resposta com os dados detalhados do usuário logado.
+/// Resposta com os dados detalhados do usuário logado, incluindo dados da campanha ativa.
 /// </summary>
-/// <param name="Name">Nome completo.</param>
-/// <param name="Email">E-mail institucional.</param>
-/// <param name="AccessProfileName">Nome do perfil de acesso (cargo).</param>
 public record UserMeResponse(
     string Name,
     string Email,
-    string AccessProfileName
+    string AccessProfileName,
+    string? BallotName,
+    string? PositionName,
+    string? AvatarUrl,
+    int? CandidateNumber,
+    int? ElectionYear,
+    string? PartyName,
+    string? PartySlug,
+    string? MunicipalityName,
+    string? StateAcronym
 );
 
 /// <summary>

@@ -18,35 +18,47 @@ export async function getSidebarData(): Promise<SidebarData | null> {
     })
 
     if (!userRes.ok) return null
-    const userData = (await userRes.json()) as { name: string; email: string; role: string }
+    const userData = (await userRes.json()) as {
+      name: string
+      email: string
+      accessProfileName: string
+      ballotName?: string
+      positionName?: string
+      avatarUrl?: string
+      candidateNumber?: number
+      electionYear?: number
+      partyName?: string
+      partySlug?: string
+      municipalityName?: string
+      stateAcronym?: string
+    }
 
-    // 2. Extrai as telas permitidas diretamente da sessão (que agora contém ícones e títulos)
-    // Filtramos apenas por permissão de 'view'
+    // 2. Extrai as telas permitidas diretamente da sessão
     const viewPermissions = session.permissions?.filter(p => p.key === 'view') || []
 
-    // Mapeia para o formato de Screen esperado pelo getNavMain
     const permittedScreens: Screen[] = viewPermissions.map((p, index) => ({
       id: index,
       key: p.screen,
       title: p.title || p.screen,
       icon: p.icon || 'help-circle',
-      sidebar: p.title,
     }))
 
     const navMain = getNavMain(permittedScreens, session.domain)
 
-    // 3. Retorna os dados agregados (Placeholders para Campanha/Candidato por enquanto)
+    // 3. Retorna os dados agregados
     return {
-      ballot_name: 'Candidato Exemplo',
-      position_name: userData.role || 'Cargo',
-      avatar_url: '',
-      candidate_number: 99,
-      election_year: 2026,
-      party_name: 'Partido Exemplo',
-      party_slug: 'PEX',
-      municipality_name: 'Cidade Exemplo',
-      user_name: userData.name,
-      user_email: userData.email,
+      ballotName: userData.ballotName || 'Candidato',
+      positionName: userData.positionName || userData.accessProfileName || 'Cargo',
+      avatarUrl: userData.avatarUrl || '',
+      candidateNumber: userData.candidateNumber || 0,
+      electionYear: userData.electionYear || 0,
+      partyName: userData.partyName || 'Partido',
+      partySlug: userData.partySlug || 'PTD',
+      municipalityName: userData.municipalityName || 'Cidade',
+      stateAcronym: userData.stateAcronym || 'UF',
+      hasActiveCampaign: !!userData.electionYear,
+      userName: userData.name,
+      userEmail: userData.email,
       navMain,
     }
   } catch (error) {

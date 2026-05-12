@@ -16,6 +16,9 @@ services:
       - postgres
       - redis
       - mailhog
+    restart: always
+    volumes:
+      - ./apps/api/wwwroot/storage:/app/wwwroot/storage
     networks:
       - campanha-360-network
 

@@ -5,7 +5,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from '@/components/custom/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
-import { AccessProfile, UserRegistration } from '@/types'
+import { AccessProfile, User } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Pencil, Trash2, Eye, Plus } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -13,11 +13,10 @@ import { UserRegistrationForm } from '@/components/forms/user-registration-form'
 import { deleteUserAction } from '@/lib/action/user-registration-action'
 import { toast } from 'sonner'
 import { DataTableDeleteDialog } from '@/components/custom/data-table/data-table-delete-dialog'
-
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface UserRegistrationTableProps {
-  data: UserRegistration[]
+  data: User[]
   canUpdate?: boolean
   canDelete?: boolean
   canCreate?: boolean
@@ -31,14 +30,14 @@ export function UserRegistrationTable({
   canCreate = false,
   accessProfiles,
 }: UserRegistrationTableProps) {
-  const [currentUser, setCurrentUser] = React.useState<UserRegistration | null>(null)
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null)
   const [dialogMode, setDialogMode] = React.useState<'edit' | 'view'>('view')
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false)
   const [isEditViewDialogOpen, setIsEditViewDialogOpen] = React.useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
 
-  const [userToDelete, setUserToDelete] = React.useState<UserRegistration | null>(null)
+  const [userToDelete, setUserToDelete] = React.useState<User | null>(null)
 
   const handleDelete = async () => {
     if (!userToDelete) return
@@ -52,7 +51,7 @@ export function UserRegistrationTable({
     }
   }
 
-  const columns = React.useMemo<ColumnDef<UserRegistration>[]>(
+  const columns = React.useMemo<ColumnDef<User>[]>(
     () => [
       {
         accessorKey: 'name',

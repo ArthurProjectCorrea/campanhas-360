@@ -43,7 +43,7 @@ interface AccessProfileFormProps {
 const initialState: ActionState = {}
 
 const SCREEN_PERMISSIONS_MAPPING: Record<string, string[]> = {
-  organization_profile: ['view', 'update', 'create', 'delete'],
+  organization_profile: ['view', 'update', 'create'],
   user_registration: ['view', 'update', 'create', 'delete'],
   access_profile: ['view', 'update', 'create', 'delete'],
   regional_planning: ['view', 'update', 'create', 'delete'],

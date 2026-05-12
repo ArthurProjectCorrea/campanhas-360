@@ -20,28 +20,93 @@ export type User = {
   email: string
   password?: string
   clientId?: string | number
-  client_id?: string | number
   accessProfileId?: number | AccessProfile
-  access_profile_id: number | AccessProfile
+  accessProfileName?: string
+  access_profile_name?: string
   isActive?: boolean
-  is_active: boolean
+  is_active?: boolean
   createdAt?: string
   created_at?: string
   updatedAt?: string
-  updated_at?: string
   deletedAt?: string | null
-  deleted_at?: string | null
 }
 
-export interface UserRegistration extends User {
-  accessProfileName?: string
-  access_profile_name: string
-}
-
-export type Permission = {
+export type Candidate = {
   id: number
-  key: string
   name: string
+  avatarUrl?: string
+  ballotName?: string
+  cpf?: string
+  socialName?: string
+  birthDate?: string
+  clientId?: string | number
+}
+
+export type Campaign = {
+  id: number
+  candidateId: number
+  positionId: number
+  positionName?: string
+  municipalityId: number
+  municipalityName?: string
+  partyId: number
+  partyName?: string
+  stateId: number
+  stateName?: string
+  candidateNumber: number
+  electionYear: number
+  legalSpendingLimit: number
+  isActive: boolean
+  clientId: string | number
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+}
+
+export interface PositionMetadata {
+  id: number
+  name: string
+  type: string
+}
+
+export interface StateMetadata {
+  id: number
+  name: string
+  acronym: string
+}
+
+export interface MunicipalityMetadata {
+  id: number
+  name: string
+}
+
+export interface PartyMetadata {
+  id: number
+  name: string
+  acronym: string
+}
+
+export interface MetadataResponse {
+  positions: PositionMetadata[]
+  states: StateMetadata[]
+  parties: PartyMetadata[]
+}
+
+export interface ScreenMetadata {
+  key: string
+  title: string
+  description?: string
+}
+
+export interface OrganizationProfileData {
+  screen: ScreenMetadata
+  candidate: Candidate | null
+  campaigns: Campaign[]
+  permissions: {
+    canUpdate: boolean
+    canCreate: boolean
+  }
+  metadata: MetadataResponse
 }
 
 export type Screen = {
@@ -50,73 +115,18 @@ export type Screen = {
   title: string
   description?: string
   sidebar?: string
-  icon: string
-}
-
-export type Access = {
-  accessProfileId?: string
-  access_profile_id?: string | number
-  permissionId: number
-  permission_id?: number
-  screenId: number
-  screen_id?: number
-  permissionKey?: string
-  permission_key?: string
-  screenKey?: string
-  screen_key?: string
+  icon?: string
 }
 
 export type AccessProfile = {
   id: string | number
   name: string
   isActive?: boolean
-  is_active?: boolean
-  clientId?: string
-  client_id?: string | number
+  clientId?: string | number
   accesses?: Access[]
   createdAt?: string
-  created_at?: string
   updatedAt?: string
-  updated_at?: string
   deletedAt?: string | null
-  deleted_at?: string | null
-}
-
-export type Client = {
-  id: string | number
-  name?: string
-  domain: string
-  candidate_id: string | number
-  position_id: string | number
-  municipality_id: string | number
-  party_id: string | number
-  candidate_number: number
-  election_year: number
-  avatar_url?: string
-  is_active: boolean
-  created_at?: string
-  updated_at?: string
-  deleted_at?: string | null
-}
-
-export type Candidate = {
-  id: string | number
-  candidate_name: string
-  ballot_name: string
-  social_name?: string
-  avatar_url?: string
-  birth_date: string
-  schooling_id: number
-  state_of_birth_id: number
-  gender_id: number
-  marital_status_id: number
-  color_race_id: number
-  occupation_id: number
-}
-
-export type Position = {
-  id: string | number
-  name: string
 }
 
 export type RegionalPlanning = {
@@ -124,40 +134,24 @@ export type RegionalPlanning = {
   name: string
   goal: number
   votes: number
-  is_active: boolean
-  campaign_id: number
-  client_id: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  isActive: boolean
+  campaignId: number
+  clientId: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export type Financial = {
   id: number
-  is_expense: boolean
+  isExpense: boolean
   value: string | number
-  campaign_id: number
-  client_id: number
-  regional_planning_id: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-}
-
-export type Campaign = {
-  id: number
-  candidate_id: number
-  position_id: number
-  municipality_id: number
-  party_id: number
-  candidate_number: number
-  election_year: number
-  legal_spending_limit: number
-  is_active: boolean
-  client_id: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  campaignId: number
+  clientId: number
+  regionalPlanningId: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export type NavMainItem = {
@@ -173,47 +167,30 @@ export type NavMainItem = {
 }
 
 export type SidebarData = {
-  ballot_name: string
-  position_name: string
-  avatar_url: string
-  candidate_number: number
-  election_year: number
-  party_name: string
-  party_slug: string
-  municipality_name: string
-  user_name: string
-  user_email: string
+  ballotName: string
+  positionName: string
+  avatarUrl: string
+  candidateNumber: number
+  electionYear: number
+  partyName: string
+  partySlug: string
+  municipalityName: string
+  stateAcronym: string
+  hasActiveCampaign: boolean
+  userName: string
+  userEmail: string
   navMain: NavMainItem[]
 }
 
-export type CensusTract = {
-  id: string
-  situation: string
-  situation_id: number
-  type_id: number
-  area_km2: number
-  region_id: number
-  region_name: string
-  state_id: number
-  state_name: string
-  municipality_id: number
-  municipality_name: string
-  district_id: number
-  district_name: string
-  subdistrict_id: number
-  subdistrict_name: string
-  neighborhood_id: number | null
-  neighborhood_name: string
-  nu_id: number | null
-  nu_name: string
-  fcu_id: number | null
-  fcu_name: string
-  aglom_id: number | null
-  aglom_name: string
-  intermediate_region_id: number
-  intermediate_region_name: string
-  immediate_region_id: number
-  immediate_region_name: string
-  concurb_id: number | null
-  concurb_name: string
+export type Permission = {
+  id: number
+  key: string
+  name: string
+}
+
+export type Access = {
+  screenId: number
+  screenKey?: string
+  permissionId: number
+  permissionKey?: string
 }

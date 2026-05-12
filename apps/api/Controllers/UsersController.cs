@@ -253,10 +253,30 @@ public class UsersController : BaseApiController
 
         if (user == null) return NotFound();
 
+        // Buscar dados do candidato e campanha ativa
+        var candidate = await _context.Candidates
+            .FirstOrDefaultAsync(c => c.ClientId == session.ClientId && c.DeletedAt == null);
+
+        var campaign = await _context.Campaigns
+            .Include(c => c.Position)
+            .Include(c => c.Party)
+            .Include(c => c.Municipality)
+            .Include(c => c.State)
+            .FirstOrDefaultAsync(c => c.ClientId == session.ClientId && c.IsActive && c.DeletedAt == null);
+
         return Ok(new UserMeResponse(
             user.Name,
             user.Email!,
-            user.AccessProfile.Name
+            user.AccessProfile.Name,
+            candidate?.BallotName,
+            campaign?.Position?.Name,
+            candidate?.AvatarUrl,
+            campaign?.CandidateNumber,
+            campaign?.ElectionYear,
+            campaign?.Party?.Name,
+            campaign?.Party?.Acronym,
+            campaign?.Municipality?.Name,
+            campaign?.State?.Acronym
         ));
     }
 

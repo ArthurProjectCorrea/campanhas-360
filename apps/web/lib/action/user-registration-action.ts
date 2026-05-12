@@ -1,7 +1,7 @@
 'use server'
 
 import { getSession, hasPermission } from '@/lib/session'
-import { AccessProfile, ActionState, Screen } from '@/types'
+import { AccessProfile, ActionState } from '@/types'
 import { forbidden } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
@@ -92,7 +92,7 @@ export async function upsertUserAction(
   const id = formData.get('id') as string
   const name = formData.get('name') as string
   const email = formData.get('email') as string
-  const accessProfileId = formData.get('access_profile_id') as string
+  const accessProfileId = formData.get('accessProfileId') as string
   const isActive = formData.get('isActive') === 'on'
 
   if (!name || !email || !accessProfileId) {

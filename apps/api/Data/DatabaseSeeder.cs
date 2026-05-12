@@ -1,6 +1,7 @@
 using Api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Api.Data;
 
@@ -102,7 +103,7 @@ public static class DatabaseSeeder
                 {
                     { "dashboard", new[] { "view" } },
                     { "regional_planning", new[] { "view", "update", "create", "delete" } },
-                    { "organization_profile", new[] { "view", "update", "create", "delete" } },
+                    { "organization_profile", new[] { "view", "update", "create" } },
                     { "user_registration", new[] { "view", "update", "create", "delete" } },
                     { "access_profile", new[] { "view", "update", "create", "delete" } }
                 };
@@ -163,6 +164,199 @@ public static class DatabaseSeeder
             else
             {
                 logger.LogInformation("Usuário administrador já existe.");
+            }
+
+            // 7. Seed Regions and States from IBGE
+            if (!await context.Regions.AnyAsync())
+            {
+                logger.LogInformation("Semeando Regiões e Estados vindo do IBGE...");
+                using var clientHttp = new HttpClient();
+                try
+                {
+                    var response = await clientHttp.GetAsync("https://servicodados.ibge.gov.br/api/v1/localidades/estados");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        using var doc = System.Text.Json.JsonDocument.Parse(json);
+                        var root = doc.RootElement;
+
+                        foreach (var stateElement in root.EnumerateArray())
+                        {
+                            var regiaoElement = stateElement.GetProperty("regiao");
+                            int regionId = regiaoElement.GetProperty("id").GetInt32();
+
+                            // Garantir que a região existe
+                            var region = await context.Regions.FindAsync(regionId);
+                            if (region == null)
+                            {
+                                region = new Region
+                                {
+                                    Id = regionId,
+                                    Acronym = regiaoElement.GetProperty("sigla").GetString() ?? "",
+                                    Name = regiaoElement.GetProperty("nome").GetString() ?? ""
+                                };
+                                context.Regions.Add(region);
+                                await context.SaveChangesAsync();
+                            }
+
+                            // Criar o estado
+                            int stateId = stateElement.GetProperty("id").GetInt32();
+                            if (!await context.States.AnyAsync(s => s.Id == stateId))
+                            {
+                                context.States.Add(new State
+                                {
+                                    Id = stateId,
+                                    Acronym = stateElement.GetProperty("sigla").GetString() ?? "",
+                                    Name = stateElement.GetProperty("nome").GetString() ?? "",
+                                    RegionId = regionId
+                                });
+                            }
+                        }
+                        await context.SaveChangesAsync();
+                        logger.LogInformation("Estados e Regiões semeados com sucesso.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Erro ao buscar dados do IBGE para o Seed.");
+                }
+            }
+
+            // 8. Seed Municipalities and Hierarchy from IBGE
+            var municipalityCount = await context.Municipalities.CountAsync();
+            logger.LogInformation("Total de municípios no banco: {Count}", municipalityCount);
+
+            if (municipalityCount < 5500)
+            {
+                logger.LogInformation("Semeando Municípios e hierarquia vindo do IBGE (modo incremental por estado)...");
+                using var clientHttp = new HttpClient();
+                clientHttp.Timeout = TimeSpan.FromMinutes(2);
+
+                var statesList = await context.States.Select(s => s.Id).ToListAsync();
+                var mesoIds = await context.Mesoregions.Select(m => m.Id).ToHashSetAsync();
+                var microIds = await context.Microregions.Select(m => m.Id).ToHashSetAsync();
+                var interIds = await context.IntermediateRegions.Select(m => m.Id).ToHashSetAsync();
+                var imedIds = await context.ImmediateRegions.Select(m => m.Id).ToHashSetAsync();
+                var existingMunIds = await context.Municipalities.Select(m => m.Id).ToHashSetAsync();
+
+                foreach (var stateId in statesList)
+                {
+                    try
+                    {
+                        logger.LogInformation("Buscando municípios para o estado ID: {StateId}", stateId);
+                        var response = await clientHttp.GetAsync($"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{stateId}/municipios");
+
+                        if (!response.IsSuccessStatusCode) continue;
+
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(jsonString);
+
+                        int count = 0;
+                        int stateAddedCount = 0;
+                        foreach (var munElement in doc.RootElement.EnumerateArray())
+                        {
+                            try
+                            {
+                                int munId = munElement.GetProperty("id").GetInt32();
+                                if (existingMunIds.Contains(munId)) continue;
+
+                                // 1. Meso e Micro
+                                if (!munElement.TryGetProperty("microrregiao", out var microElement) ||
+                                    microElement.ValueKind == JsonValueKind.Null) continue;
+
+                                if (!microElement.TryGetProperty("mesorregiao", out var mesoElement) ||
+                                    mesoElement.ValueKind == JsonValueKind.Null) continue;
+
+                                int mesoId = mesoElement.GetProperty("id").GetInt32();
+                                if (!mesoIds.Contains(mesoId))
+                                {
+                                    context.Mesoregions.Add(new Mesoregion { Id = mesoId, Name = mesoElement.GetProperty("nome").GetString() ?? "", StateId = stateId });
+                                    mesoIds.Add(mesoId);
+                                }
+
+                                int microId = microElement.GetProperty("id").GetInt32();
+                                if (!microIds.Contains(microId))
+                                {
+                                    context.Microregions.Add(new Microregion { Id = microId, Name = microElement.GetProperty("nome").GetString() ?? "", MesoregionId = mesoId });
+                                    microIds.Add(microId);
+                                }
+
+                                // 2. Intermediária e Imediata
+                                if (!munElement.TryGetProperty("regiao-imediata", out var imedElement) ||
+                                    imedElement.ValueKind == JsonValueKind.Null) continue;
+
+                                if (!imedElement.TryGetProperty("regiao-intermediaria", out var interElement) ||
+                                    interElement.ValueKind == JsonValueKind.Null) continue;
+
+                                int interId = interElement.GetProperty("id").GetInt32();
+                                if (!interIds.Contains(interId))
+                                {
+                                    context.IntermediateRegions.Add(new IntermediateRegion { Id = interId, Name = interElement.GetProperty("nome").GetString() ?? "", StateId = stateId });
+                                    interIds.Add(interId);
+                                }
+
+                                int imedId = imedElement.GetProperty("id").GetInt32();
+                                if (!imedIds.Contains(imedId))
+                                {
+                                    context.ImmediateRegions.Add(new ImmediateRegion { Id = imedId, Name = imedElement.GetProperty("nome").GetString() ?? "", IntermediateRegionId = interId });
+                                    imedIds.Add(imedId);
+                                }
+
+                                // 3. Município
+                                context.Municipalities.Add(new Municipality
+                                {
+                                    Id = munId,
+                                    Name = munElement.GetProperty("nome").GetString() ?? "",
+                                    MicroregionId = microId,
+                                    ImmediateRegionId = imedId
+                                });
+
+                                count++;
+                                stateAddedCount++;
+                                existingMunIds.Add(munId);
+
+                                if (count % 100 == 0)
+                                {
+                                    await context.SaveChangesAsync();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogWarning(ex, "Erro ao processar município no estado {StateId}. Pulando...", stateId);
+                                continue;
+                            }
+                        }
+                        await context.SaveChangesAsync();
+                        if (stateAddedCount > 0)
+                            logger.LogInformation("Estado {StateId} concluído. Adicionados: {Added}", stateId, stateAddedCount);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Erro ao buscar municípios para o estado {StateId}", stateId);
+                    }
+                }
+                logger.LogInformation("Sincronização de municípios finalizada.");
+            }
+
+            // 9. Seed Sample Candidate
+            if (!await context.Candidates.AnyAsync())
+            {
+                logger.LogInformation("Semeando candidato de teste...");
+                var sampleCandidate = new Candidate
+                {
+                    Name = "Fulano de Tal",
+                    AvatarUrl = "",
+                    BallotName = "Fulano do Povo",
+                    CPF = "123.456.789-00",
+                    SocialName = "",
+                    BirthDate = new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    ClientId = client.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                context.Candidates.Add(sampleCandidate);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Candidato de teste semeado com sucesso.");
             }
 
             logger.LogInformation("Seed do banco de dados concluído.");

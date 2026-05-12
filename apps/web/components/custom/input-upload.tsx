@@ -15,7 +15,8 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Spinner } from '@/components/ui/spinner'
-import { uploadAvatarAction } from '@/lib/action/organization-profile-action'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 interface InputUploadProps {
   name: string
@@ -40,12 +41,15 @@ export function InputUpload({
   onFileChange,
   disabled,
 }: InputUploadProps) {
-  const [preview, setPreview] = React.useState<string | null>(defaultValue || null)
+  const normalizedDefaultValue = defaultValue?.startsWith('/')
+    ? `${API_URL}${defaultValue}`
+    : defaultValue
+  const [preview, setPreview] = React.useState<string | null>(normalizedDefaultValue || null)
   const [file, setFile] = React.useState<File | null>(null)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [isLoading] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
@@ -61,7 +65,6 @@ export function InputUpload({
       return
     }
 
-    setIsLoading(true)
     setFile(selectedFile)
 
     // Create preview
@@ -73,45 +76,16 @@ export function InputUpload({
       reader.readAsDataURL(selectedFile)
     }
 
-    // Upload imediato
-    const formData = new FormData()
-    formData.append('avatar', selectedFile)
-
-    const result = await uploadAvatarAction(formData)
-
-    if (result.success) {
-      toast.success(result.message)
-      onFileChange?.(selectedFile)
-    } else {
-      toast.error(result.message)
-      setPreview(defaultValue || null)
-      setFile(null)
-    }
-
-    setIsLoading(false)
+    onFileChange?.(selectedFile)
   }
 
-  const handleClear = async () => {
-    setIsLoading(true)
-
-    const formData = new FormData()
-    formData.append('avatar_remove', 'true')
-
-    const result = await uploadAvatarAction(formData)
-
-    if (result.success) {
-      toast.success(result.message)
-      setFile(null)
-      setPreview(null)
-      onFileChange?.(null)
-      if (inputRef.current) {
-        inputRef.current.value = ''
-      }
-    } else {
-      toast.error(result.message)
+  const handleClear = () => {
+    setFile(null)
+    setPreview(null)
+    onFileChange?.(null)
+    if (inputRef.current) {
+      inputRef.current.value = ''
     }
-
-    setIsLoading(false)
   }
 
   return (
@@ -202,6 +176,127 @@ export function InputUpload({
           </Empty>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Variante compacta (tamanho de input de texto) ───────────────────────────
+
+interface InputUploadInlineProps {
+  name: string
+  defaultValue?: string
+  disabled?: boolean
+  onFileChange?: (file: File | null) => void
+}
+
+export function InputUploadInline({
+  name,
+  defaultValue,
+  disabled,
+  onFileChange,
+}: InputUploadInlineProps) {
+  const normalizedDefaultValue = defaultValue?.startsWith('/')
+    ? `${API_URL}${defaultValue}`
+    : defaultValue
+  const [preview, setPreview] = React.useState<string | null>(normalizedDefaultValue || null)
+  const [fileName, setFileName] = React.useState<string | null>(null)
+  const [isLoading] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (!selectedFile) return
+
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      toast.error('O arquivo é muito grande. O limite é 2MB.')
+      return
+    }
+    if (!selectedFile.type.startsWith('image/')) {
+      toast.error('Apenas imagens são permitidas.')
+      return
+    }
+
+    setFileName(selectedFile.name)
+    const reader = new FileReader()
+    reader.onloadend = () => setPreview(reader.result as string)
+    reader.readAsDataURL(selectedFile)
+
+    onFileChange?.(selectedFile)
+  }
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setPreview(null)
+    setFileName(null)
+    onFileChange?.(null)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  const handleClick = () => {
+    if (!disabled && !isLoading) inputRef.current?.click()
+  }
+
+  return (
+    <div
+      role={!disabled ? 'button' : undefined}
+      tabIndex={!disabled ? 0 : undefined}
+      onClick={handleClick}
+      onKeyDown={e => e.key === 'Enter' && handleClick()}
+      className={cn(
+        // Mesmo visual do <Input> do shadcn/ui
+        'flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm ring-offset-background',
+        'transition-colors',
+        !disabled &&
+          !isLoading &&
+          'cursor-pointer hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        disabled && 'cursor-not-allowed opacity-50',
+      )}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        name={name}
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={disabled || isLoading}
+      />
+
+      {/* Thumbnail */}
+      <div className="relative h-6 w-6 shrink-0 rounded-full border bg-muted overflow-hidden">
+        {preview ? (
+          <Image src={preview} alt="Avatar" fill className="object-cover" unoptimized />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <CloudUpload className="h-3 w-3 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Label / filename */}
+      <span className={cn('flex-1 truncate', !preview && !fileName && 'text-muted-foreground')}>
+        {isLoading
+          ? 'Enviando...'
+          : fileName
+            ? fileName
+            : preview
+              ? 'Foto definida'
+              : 'Selecionar foto...'}
+      </span>
+
+      {/* Spinner ou ícone de limpar */}
+      {isLoading ? (
+        <Spinner className="h-4 w-4 shrink-0 text-muted-foreground" />
+      ) : preview && !disabled ? (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+          aria-label="Remover foto"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      ) : null}
     </div>
   )
 }

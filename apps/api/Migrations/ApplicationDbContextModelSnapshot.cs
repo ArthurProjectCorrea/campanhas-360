@@ -165,6 +165,116 @@ namespace Api.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Api.Models.Campaign", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CandidateNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ElectionYear")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("LegalSpendingLimit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("MunicipalityId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PartyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("StateId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CandidateId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("MunicipalityId");
+
+                    b.HasIndex("PartyId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("StateId");
+
+                    b.ToTable("Campaigns");
+                });
+
+            modelBuilder.Entity("Api.Models.Candidate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BallotName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("BirthDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CPF")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SocialName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("Candidates");
+                });
+
             modelBuilder.Entity("Api.Models.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -196,6 +306,180 @@ namespace Api.Migrations
                     b.ToTable("Clients");
                 });
 
+            modelBuilder.Entity("Api.Models.ColorRace", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ColorRaces");
+                });
+
+            modelBuilder.Entity("Api.Models.Gender", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Genders");
+                });
+
+            modelBuilder.Entity("Api.Models.ImmediateRegion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IntermediateRegionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntermediateRegionId");
+
+                    b.ToTable("ImmediateRegions");
+                });
+
+            modelBuilder.Entity("Api.Models.IntermediateRegion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StateId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StateId");
+
+                    b.ToTable("IntermediateRegions");
+                });
+
+            modelBuilder.Entity("Api.Models.MaritalStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MaritalStatuses");
+                });
+
+            modelBuilder.Entity("Api.Models.Mesoregion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StateId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StateId");
+
+                    b.ToTable("Mesoregions");
+                });
+
+            modelBuilder.Entity("Api.Models.Microregion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MesoregionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MesoregionId");
+
+                    b.ToTable("Microregions");
+                });
+
+            modelBuilder.Entity("Api.Models.Municipality", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ImmediateRegionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MicroregionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImmediateRegionId");
+
+                    b.HasIndex("MicroregionId");
+
+                    b.ToTable("Municipalities");
+                });
+
+            modelBuilder.Entity("Api.Models.Occupation", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Occupations");
+                });
+
+            modelBuilder.Entity("Api.Models.Party", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Acronym")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Parties");
+                });
+
             modelBuilder.Entity("Api.Models.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -215,6 +499,56 @@ namespace Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Permissions");
+                });
+
+            modelBuilder.Entity("Api.Models.Position", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Positions");
+                });
+
+            modelBuilder.Entity("Api.Models.Region", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Acronym")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Regions");
+                });
+
+            modelBuilder.Entity("Api.Models.Schooling", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Schoolings");
                 });
 
             modelBuilder.Entity("Api.Models.Screen", b =>
@@ -245,6 +579,192 @@ namespace Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Screens");
+                });
+
+            modelBuilder.Entity("Api.Models.State", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Acronym")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("States");
+                });
+
+            modelBuilder.Entity("Api.Models.TseCandidate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ANO_ELEICAO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_CARGO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_COR_RACA")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_ELEICAO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_ESTADO_CIVIL")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_GENERO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_GRAU_INSTRUCAO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_OCUPACAO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_SITUACAO_CANDIDATURA")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_SIT_TOT_TURNO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CD_TIPO_ELEICAO")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DS_CARGO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_COMPOSICAO_COLIGACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_COMPOSICAO_FEDERACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_COR_RACA")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_ELEICAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_EMAIL")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_ESTADO_CIVIL")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_GENERO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_GRAU_INSTRUCAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_OCUPACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_SITUACAO_CANDIDATURA")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DS_SIT_TOT_TURNO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DT_ELEICAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DT_NASCIMENTO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_CANDIDATO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_COLIGACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_FEDERACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_PARTIDO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_SOCIAL_CANDIDATO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_TIPO_ELEICAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_UE")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NM_URNA_CANDIDATO")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("NR_CANDIDATO")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NR_CPF_CANDIDATO")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("NR_FEDERACAO")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("NR_PARTIDO")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NR_TITULO_ELEITORAL_CANDIDATO")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("NR_TURNO")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SG_FEDERACAO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SG_PARTIDO")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SG_UE")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SG_UF")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SG_UF_NASCIMENTO")
+                        .HasColumnType("text");
+
+                    b.Property<long>("SQ_CANDIDATO")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("SQ_COLIGACAO")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TP_ABRANGENCIA")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TP_AGREMIACAO")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SQ_CANDIDATO")
+                        .IsUnique();
+
+                    b.ToTable("TseCandidates");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -434,6 +954,140 @@ namespace Api.Migrations
                     b.Navigation("Client");
                 });
 
+            modelBuilder.Entity("Api.Models.Campaign", b =>
+                {
+                    b.HasOne("Api.Models.Candidate", "Candidate")
+                        .WithMany("Campaigns")
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Api.Models.Party", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.Position", "Position")
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.State", "State")
+                        .WithMany()
+                        .HasForeignKey("StateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Municipality");
+
+                    b.Navigation("Party");
+
+                    b.Navigation("Position");
+
+                    b.Navigation("State");
+                });
+
+            modelBuilder.Entity("Api.Models.Candidate", b =>
+                {
+                    b.HasOne("Api.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("Api.Models.ImmediateRegion", b =>
+                {
+                    b.HasOne("Api.Models.IntermediateRegion", "IntermediateRegion")
+                        .WithMany()
+                        .HasForeignKey("IntermediateRegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IntermediateRegion");
+                });
+
+            modelBuilder.Entity("Api.Models.IntermediateRegion", b =>
+                {
+                    b.HasOne("Api.Models.State", "State")
+                        .WithMany()
+                        .HasForeignKey("StateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("State");
+                });
+
+            modelBuilder.Entity("Api.Models.Mesoregion", b =>
+                {
+                    b.HasOne("Api.Models.State", "State")
+                        .WithMany()
+                        .HasForeignKey("StateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("State");
+                });
+
+            modelBuilder.Entity("Api.Models.Microregion", b =>
+                {
+                    b.HasOne("Api.Models.Mesoregion", "Mesoregion")
+                        .WithMany()
+                        .HasForeignKey("MesoregionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Mesoregion");
+                });
+
+            modelBuilder.Entity("Api.Models.Municipality", b =>
+                {
+                    b.HasOne("Api.Models.ImmediateRegion", "ImmediateRegion")
+                        .WithMany()
+                        .HasForeignKey("ImmediateRegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.Microregion", "Microregion")
+                        .WithMany()
+                        .HasForeignKey("MicroregionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ImmediateRegion");
+
+                    b.Navigation("Microregion");
+                });
+
+            modelBuilder.Entity("Api.Models.State", b =>
+                {
+                    b.HasOne("Api.Models.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -490,6 +1144,11 @@ namespace Api.Migrations
                     b.Navigation("Accesses");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Api.Models.Candidate", b =>
+                {
+                    b.Navigation("Campaigns");
                 });
 
             modelBuilder.Entity("Api.Models.Client", b =>

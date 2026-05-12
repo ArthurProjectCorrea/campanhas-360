@@ -83,10 +83,8 @@ export function UserRegistrationForm({
         <Field>
           <FieldLabel>Perfil de Acesso</FieldLabel>
           <Select
-            name="access_profile_id"
-            defaultValue={
-              initialData?.accessProfileId?.toString() || initialData?.access_profile_id?.toString()
-            }
+            name="accessProfileId"
+            defaultValue={initialData?.accessProfileId?.toString()}
             disabled={disabled}
             required
           >
@@ -113,13 +111,7 @@ export function UserRegistrationForm({
               <Switch
                 id="isActive"
                 name="isActive"
-                defaultChecked={
-                  initialData
-                    ? initialData.isActive !== undefined
-                      ? initialData.isActive
-                      : initialData.is_active
-                    : true
-                }
+                defaultChecked={initialData ? (initialData.isActive ?? true) : true}
                 disabled={disabled}
               />
             </Field>

@@ -1,77 +1,68 @@
-# Documento de Análise: Perfil da Organização
+# Web: Perfil da Organização
 
-## 1. Introdução
-Este documento detalha o funcionamento do módulo de **Perfil da Organização**, responsável por gerenciar as informações institucionais e a identidade visual da campanha. O módulo integra dados de clientes e candidatos, garantindo a consistência da marca em toda a plataforma.
+Este documento detalha as responsabilidades, fluxos de dados e modificações necessárias no frontend para integração com a API de Perfil da Organização.
 
----
+## 1. Responsabilidades do Frontend
+O frontend deve gerenciar o estado do candidato e suas campanhas, garantindo que as alterações sejam enviadas de forma consolidada e segura.
 
-## 2. Funcionamento do Módulo (Protótipo Atual)
+### 1.1. Fluxo de Dados e Sincronização
+- **Carregamento**: O componente de página (`page.tsx`) utiliza a Server Action `getOrganizationData` para buscar todos os dados necessários em uma única requisição ao backend.
+- **Persistência**: Toda mutação é realizada via `organizationProfileAction`, que lida com diferentes intenções (`save`, `create`, `inactivate`).
+- **Upload de Imagem**: O upload é **deferido**. O componente `InputUploadInline` apenas armazena o arquivo localmente para preview. O envio real ocorre no clique de "Salvar Alterações".
 
-### 2.1. Arquitetura e Fluxo de Dados
-O módulo utiliza um modelo híbrido de persistência simulada:
-- **Dados Institucionais**: Gerenciados via `updateOrganizationAction` no arquivo `clients.json`.
-- **Identidade Visual**: Gerenciada via `uploadAvatarAction` no arquivo `candidates.json`.
-- **Sincronização**: O sistema vincula o `candidate_id` do cliente aos dados do candidato para exibir o avatar correto.
+## 2. Server Actions (`lib/action/organization-profile-action.ts`)
 
-### 2.2. Gestão de Identidade Visual (Upload Imediato)
-Diferente de formulários tradicionais, o upload da foto do candidato é **imediato**:
-1. O usuário seleciona o arquivo.
-2. O componente `InputUpload` dispara a Action `uploadAvatarAction`.
-3. O arquivo é salvo fisicamente em `public/storage` e o caminho é atualizado em `candidates.json`.
-4. O feedback é instantâneo via **Sonner**, sem necessidade de clicar em "Salvar" no formulário principal.
+### `getOrganizationData()`
+- **Objetivo**: Buscar dados iniciais.
+- **Responsabilidades**:
+  - Validar sessão e permissão `view`.
+  - Chamar `GET /api/organization-profile`.
+  - Retornar objeto consolidado: `{ screen, candidate, campaigns, canUpdate, canCreate }`.
 
-### 2.3. Controle de Alterações (Discard Logic)
-Para os campos de texto e seletores, o sistema implementa uma lógica de descarte:
-- O formulário utiliza `refs` para acessar o elemento DOM e executar o método `reset()`.
-- Isso garante que qualquer alteração não salva seja eliminada, retornando os campos aos valores originais carregados do servidor (`defaultValue`).
+### `organizationProfileAction(prevState, formData)`
+- **Objetivo**: Orquestrar as mutações na API.
+- **Responsabilidades**:
+  - Detectar a intenção via `formData.get('intent')`.
+  - **Save (`update`)**:
+    - Criar um `FormData` contendo os dados do candidato e da campanha ativa.
+    - Incluir o arquivo de imagem se houver.
+    - Chamar `PUT /api/organization-profile` com `headers: { Authorization: Bearer token }`.
+  - **Create (`create`)**:
+    - Enviar dados da nova campanha via `POST /api/organization-profile/campaigns`.
+  - **Inactivate (`inactivate`)**:
+    - Chamar `PUT /api/organization-profile/campaigns/{id}/inactivate`.
+  - Revalidar o cache via `revalidatePath`.
 
----
+## 3. Componentes Relacionados
 
-## 3. Regras de Negócio e Permissões
+### `OrganizationProfileForm`
+- **Adaptação**: Substituir os dados de exemplo (`STUB_CAMPAIGNS`) pelos dados reais passados via props.
+- **Gestão de Imagem**: Manter uma `ref` ou estado para o arquivo selecionado no `InputUploadInline` e injetá-lo no `formData` antes de submeter.
+- **Bloqueio**: Reforçar o estado `disabled` em todos os campos da campanha se `isActive` for falso.
 
-### 3.1. Validação de Acesso (RBAC)
-O módulo implementa dois níveis de permissão específicos para a tela `organization_profile`:
-- **view**: Permite visualizar os dados. Se ausente, o usuário recebe um erro `403 Forbidden`.
-- **update**: Permite modificar dados e realizar uploads. Se ausente:
-    - Todos os `Inputs` e `Selects` ficam em estado `disabled`.
-    - Os botões "Salvar Alterações" e "Descartar" ficam **ocultos**.
-    - O componente de Upload oculta interações de alteração ou remoção.
-    - As Server Actions validam a permissão novamente antes de qualquer escrita em arquivo.
+### `InputUploadInline`
+- **Modificação Crítica**: Remover a chamada imediata de `uploadAvatarAction`.
+- **Nova Lógica**:
+  - Gerar `URL.createObjectURL(file)` para preview local.
+  - Notificar o pai via `onFileChange(file)`.
 
-### 3.2. Campos Obrigatórios
-- Domínio, Número do Candidato, Ano Eleitoral, Cargo, Partido e Unidade Eleitoral são obrigatórios para a persistência dos dados.
+## 4. Declaração de Types (`apps/web/types/index.ts`)
+As interfaces devem refletir o contrato da API. Recomenda-se manter o padrão de `snake_case` já utilizado no projeto para tipos de domínio:
 
----
+```typescript
+export type OrganizationProfileData = {
+  screen: Screen;
+  candidate: Candidate;
+  campaigns: Campaign[];
+  permissions: {
+    canUpdate: boolean;
+    canCreate: boolean;
+  };
+}
+```
 
-## 4. Requisitos para Integração com API Real
-
-A transição para o backend real deve seguir estas diretrizes:
-
-### 4.1. Processamento de Imagens
-- **Storage**: Substituir o salvamento local por um serviço de Storage (ex: AWS S3, Azure Blob Storage).
-- **Otimização**: A API deve processar a imagem (resize/compress) antes de armazenar para garantir performance no carregamento do dashboard.
-- **CDN**: Utilizar uma CDN para entrega dos assets de identidade visual.
-
-### 4.2. Services e Repositories
-- **Transaction**: O update dos dados da organização deve ser transacional.
-- **Cache**: Implementar invalidação de cache (Redis) quando houver alteração de domínio ou identidade visual, pois esses dados impactam o roteamento e a marca.
-
----
-
-## 5. Especificações de UI/UX
-
-### 5.1. Componentes Customizados
-- **InputUpload**: Componente interativo com preview em tempo real, suporte a remoção e estados de loading integrados.
-- **FieldGroup**: Organização visual em grid responsiva para melhor usabilidade em dispositivos móveis.
-
-### 5.2. Feedback Visual
-- Uso de **Spinners** em todos os estados de transição (uploading, saving, discarding).
-- Toast messages contextualizadas para sucesso e erro.
-
----
-
-## 6. Checklist de Segurança (Produção)
-- [ ] Validar o tipo MIME e o tamanho do arquivo de imagem no servidor.
-- [ ] Implementar verificação de integridade para garantir que um usuário só possa alterar a organização à qual está vinculado.
-- [ ] Sanitizar inputs de texto para evitar ataques de XSS.
-- [ ] Garantir que o upload de arquivos não permita a execução de scripts no servidor (Remote Code Execution).
+## 5. Checklist de Integração
+- [ ] Validar se o token JWT está sendo passado corretamente no Header.
+- [ ] Garantir que o `MultipartFormData` no Node.js (Server Actions) está sendo montado corretamente para envio ao C#.
+- [ ] Tratar erros de rede e exibir mensagens via **Sonner**.
+- [ ] Testar a revalidação de cache para garantir que os dados atualizados apareçam no Sidebar após o salvamento.

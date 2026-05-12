@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { ShieldAlert } from 'lucide-react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function Forbidden() {
   const params = useParams()
@@ -20,7 +21,7 @@ export default function Forbidden() {
       </p>
       <div className="flex gap-4">
         <Button asChild size="lg">
-          <a href={`/${domain}/dashboard`}>Voltar para o Dashboard</a>
+          <Link href={`/${domain}/dashboard`}>Voltar para o Dashboard</Link>
         </Button>
       </div>
     </div>

@@ -51,8 +51,8 @@ export async function signInAction(
     const accessProfileData: AccessProfile = {
       id: data.accessProfileId,
       name: data.accessProfileName,
-      is_active: true,
-      client_id: data.clientId,
+      isActive: true,
+      clientId: data.clientId,
       // Por enquanto as permissões podem vir vazias ou serem carregadas depois
       accesses: [],
     }

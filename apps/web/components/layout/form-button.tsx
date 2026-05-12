@@ -13,9 +13,21 @@ interface FormButtonsProps {
   onDiscard: () => void
   backUrl: string
   className?: string
+  /** Botões extras renderizados no lado esquerdo, após o botão Voltar */
+  extraActions?: React.ReactNode
+  /** Texto customizado para o botão de submit */
+  submitLabel?: string
 }
 
-export function FormButtons({ isPending, mode, onDiscard, backUrl, className }: FormButtonsProps) {
+export function FormButtons({
+  isPending,
+  mode,
+  onDiscard,
+  backUrl,
+  className,
+  extraActions,
+  submitLabel,
+}: FormButtonsProps) {
   const router = useRouter()
   const { state, isMobile } = useSidebar()
 
@@ -41,6 +53,7 @@ export function FormButtons({ isPending, mode, onDiscard, backUrl, className }: 
         >
           Voltar
         </Button>
+        {extraActions}
       </div>
 
       <div className="flex gap-3">
@@ -55,6 +68,8 @@ export function FormButtons({ isPending, mode, onDiscard, backUrl, className }: 
                   <Spinner className="mr-2 h-4 w-4" />
                   Salvando...
                 </>
+              ) : submitLabel ? (
+                submitLabel
               ) : mode === 'create' ? (
                 'Criar Registro'
               ) : (

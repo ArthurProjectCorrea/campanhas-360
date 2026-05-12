@@ -50,6 +50,16 @@ export function NavUser({
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
 
+  const formatName = (name: string) => {
+    if (!name) return ''
+    return name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  const formattedName = formatName(user.name)
   const initials = getInitials(user.name)
 
   return (
@@ -75,7 +85,7 @@ export function NavUser({
                   <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{formattedName}</span>
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
                 <ChevronsUpDownIcon className="ml-auto size-4" />
@@ -94,7 +104,7 @@ export function NavUser({
                     <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate font-medium">{formattedName}</span>
                     <span className="truncate text-xs">{user.email}</span>
                   </div>
                 </div>

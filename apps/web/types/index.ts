@@ -10,7 +10,7 @@ export type SessionPayload = {
   domain: string
   apiToken: string
   accessProfile?: AccessProfile
-  permissions?: { screen: string; key: string }[]
+  permissions?: { screen: string; key: string; icon?: string; title?: string }[]
   expiresAt: Date
 }
 

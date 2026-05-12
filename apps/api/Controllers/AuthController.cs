@@ -148,8 +148,12 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Retorna os dados da sessão do usuário logado se o token for válido.
+    /// Valida a sessão e retorna os dados rápidos guardados em cache (Redis).
     /// </summary>
+    /// <remarks>
+    /// Este endpoint é utilizado para verificação rápida de integridade da sessão e para obter as permissões
+    /// do usuário que estão persistidas no Redis. Para dados detalhados do banco, use /users/me.
+    /// </remarks>
     /// <returns>Dados da sessão persistidos no Redis.</returns>
     /// <response code="200">Sessão válida.</response>
     /// <response code="401">Token inválido ou sessão expirada.</response>
@@ -272,7 +276,11 @@ public class AuthController : ControllerBase
     {
         return await _context.Accesses
             .Where(a => a.AccessProfileId == profileId)
-            .Select(a => new UserPermissionDto(a.Screen.Key, a.Permission.Key))
+            .Select(a => new UserPermissionDto(
+                a.Screen.Key,
+                a.Permission.Key,
+                a.Screen.Icon,
+                a.Screen.Sidebar ?? a.Screen.Title))
             .ToListAsync();
     }
 

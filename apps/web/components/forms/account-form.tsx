@@ -5,25 +5,27 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldContent } from '@/components/ui/field'
-import { getAccountData, updateAccountAction } from '@/lib/action/account-action'
+import { getProfile, updateProfile } from '@/lib/action/account-action'
 import { toast } from 'sonner'
 import { Loader2Icon } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function AccountForm({ className }: React.ComponentProps<'form'>) {
   const [loading, setLoading] = React.useState(true)
   const [data, setData] = React.useState<{
-    user: { name: string; email: string }
-    profileName: string
+    name: string
+    email: string
+    accessProfileName: string
   } | null>(null)
 
-  const [state, formAction, isPending] = React.useActionState(updateAccountAction, {
+  const [state, formAction, isPending] = React.useActionState(updateProfile, {
     success: false,
     message: '',
   })
 
   React.useEffect(() => {
     async function loadData() {
-      const result = await getAccountData()
+      const result = await getProfile()
       if (result) {
         setData(result)
       }
@@ -46,8 +48,20 @@ export function AccountForm({ className }: React.ComponentProps<'form'>) {
 
   if (loading) {
     return (
-      <div className="flex h-40 items-center justify-center">
-        <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="grid gap-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full" />
       </div>
     )
   }
@@ -57,13 +71,7 @@ export function AccountForm({ className }: React.ComponentProps<'form'>) {
       <Field>
         <FieldLabel htmlFor="name">Nome</FieldLabel>
         <FieldContent>
-          <Input
-            id="name"
-            name="name"
-            defaultValue={data?.user.name}
-            placeholder="Seu nome"
-            required
-          />
+          <Input id="name" name="name" defaultValue={data?.name} placeholder="Seu nome" required />
         </FieldContent>
       </Field>
 
@@ -74,7 +82,7 @@ export function AccountForm({ className }: React.ComponentProps<'form'>) {
             type="email"
             id="email"
             name="email"
-            defaultValue={data?.user.email}
+            defaultValue={data?.email}
             placeholder="seu@email.com"
             required
           />
@@ -84,7 +92,7 @@ export function AccountForm({ className }: React.ComponentProps<'form'>) {
       <Field>
         <FieldLabel htmlFor="profile">Perfil de Acesso</FieldLabel>
         <FieldContent>
-          <Input id="profile" value={data?.profileName} disabled className="bg-muted" />
+          <Input id="profile" value={data?.accessProfileName} disabled className="bg-muted" />
         </FieldContent>
       </Field>
 

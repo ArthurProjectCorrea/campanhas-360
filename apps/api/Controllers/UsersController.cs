@@ -230,6 +230,81 @@ public class UsersController : BaseApiController
         return NoContent();
     }
 
+    /// <summary>
+    /// Retorna os detalhes do perfil do usuário logado diretamente do banco de dados.
+    /// </summary>
+    /// <remarks>
+    /// Este endpoint é utilizado para obter informações atualizadas que não estão no cache de sessão (Redis),
+    /// como o nome completo e o cargo exato do usuário.
+    /// </remarks>
+    /// <response code="200">Retorna os dados do perfil com sucesso.</response>
+    /// <response code="401">Usuário não autenticado ou sessão inválida.</response>
+    /// <response code="404">Usuário não encontrado no banco de dados.</response>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(UserMeResponse), 200)]
+    public async Task<IActionResult> GetMe()
+    {
+        var session = await GetSessionAsync();
+        if (session == null) return Unauthorized();
+
+        var user = await _userManager.Users
+            .Include(u => u.AccessProfile)
+            .FirstOrDefaultAsync(u => u.Id == session.UserId && u.DeletedAt == null);
+
+        if (user == null) return NotFound();
+
+        return Ok(new UserMeResponse(
+            user.Name,
+            user.Email!,
+            user.AccessProfile.Name
+        ));
+    }
+
+    /// <summary>
+    /// Atualiza os dados de perfil (Nome e E-mail) do usuário autenticado.
+    /// </summary>
+    /// <remarks>
+    /// O e-mail deve ser único no sistema. Se o e-mail for alterado, a unicidade será validada.
+    /// </remarks>
+    /// <response code="200">Perfil atualizado com sucesso.</response>
+    /// <response code="400">Dados inválidos ou e-mail já em uso.</response>
+    /// <response code="401">Usuário não autenticado.</response>
+    [HttpPut("me")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request)
+    {
+        var session = await GetSessionAsync();
+        if (session == null) return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(session.UserId.ToString());
+        if (user == null || user.DeletedAt != null) return NotFound();
+
+        // 1. Atualizar nome e e-mail
+        if (user.Email != request.Email)
+        {
+            var emailExists = await _userManager.Users.IgnoreQueryFilters()
+                .AnyAsync(u => u.Email == request.Email && u.Id != user.Id);
+            if (emailExists)
+            {
+                return BadRequest(new { message = "Este e-mail já está em uso por outro usuário." });
+            }
+            user.UserName = request.Email;
+            user.Email = request.Email;
+        }
+
+        user.Name = request.Name;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { message = "Erro ao atualizar perfil.", errors = result.Errors });
+        }
+
+        return Ok(new { message = "Perfil atualizado com sucesso." });
+    }
+
     private string GenerateRandomPassword(int length = 10)
     {
         const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";

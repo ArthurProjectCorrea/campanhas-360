@@ -1,76 +1,69 @@
 'use server'
-
 import { getSession } from '@/lib/session'
 import { ActionState } from '@/types'
 import { revalidatePath } from 'next/cache'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
-/**
- * Busca dados da conta do usuário logado via API.
- */
-export async function getAccountData() {
+export async function getProfile() {
   const session = await getSession()
   if (!session?.apiToken) return null
 
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(`${API_URL}/users/me`, {
       headers: { Authorization: `Bearer ${session.apiToken}` },
+      cache: 'no-store',
     })
 
     if (!response.ok) return null
-    const data = await response.json()
-
-    return {
-      user: {
-        name: data.name,
-        email: data.email,
-      },
-      profileName: data.accessProfileName || 'N/A',
-    }
+    return await response.json()
   } catch (error) {
-    console.error('Error fetching account data:', error)
+    console.error('Error fetching profile:', error)
     return null
   }
 }
 
-/**
- * Atualiza os dados da conta do usuário via API.
- */
-export async function updateAccountAction(
+export async function updateProfile(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const session = await getSession()
   if (!session?.apiToken) {
-    return { success: false, message: 'Sessão expirada.' }
+    return { success: false, message: 'Sessão expirada. Faça login novamente.' }
   }
 
   const name = formData.get('name') as string
   const email = formData.get('email') as string
 
   if (!name || !email) {
-    return { success: false, message: 'Preencha todos os campos obrigatórios.' }
+    return { success: false, message: 'Nome e e-mail são obrigatórios.' }
   }
 
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(`${API_URL}/users/me`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.apiToken}`,
       },
-      body: JSON.stringify({ name, email }),
+      body: JSON.stringify({
+        name,
+        email,
+      }),
     })
 
     if (!response.ok) {
-      return { success: false, message: 'Erro ao atualizar os dados na API.' }
+      const errorData = await response.json()
+      return {
+        success: false,
+        message: errorData.message || 'Erro ao atualizar perfil.',
+      }
     }
 
     revalidatePath('/')
-    return { success: true, message: 'Dados atualizados com sucesso.' }
+    return { success: true, message: 'Perfil atualizado com sucesso!' }
   } catch (error) {
-    console.error('Erro ao salvar conta:', error)
-    return { success: false, message: 'Erro de conexão com o servidor.' }
+    console.error('Error updating profile:', error)
+    return { success: false, message: 'Ocorreu um erro ao tentar atualizar o perfil.' }
   }
 }

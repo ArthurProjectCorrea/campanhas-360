@@ -17,6 +17,7 @@ public record SignInRequest(string Email, string Password);
 /// <param name="ClientDomain">Domínio/Slug do cliente para rotas.</param>
 /// <param name="AccessProfileId">ID do perfil de acesso.</param>
 /// <param name="AccessProfileName">Nome do perfil de acesso.</param>
+/// <param name="Permissions">Lista de permissões e telas do usuário.</param>
 public record SignInResponse(
     string Token,
     Guid UserId,
@@ -28,7 +29,7 @@ public record SignInResponse(
     List<UserPermissionDto> Permissions
 );
 
-public record UserPermissionDto(string Screen, string Key);
+public record UserPermissionDto(string Screen, string Key, string? Icon = null, string? Title = null);
 
 /// <summary>
 /// Solicitação de início de recuperação de senha.

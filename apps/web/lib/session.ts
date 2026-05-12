@@ -30,7 +30,7 @@ export async function createSession(
   domain: string,
   apiToken: string,
   accessProfile?: AccessProfile,
-  permissions?: { screen: string; key: string }[],
+  permissions?: { screen: string; key: string; icon?: string; title?: string }[],
 ) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const session = await encrypt({ userId, domain, apiToken, accessProfile, permissions, expiresAt })

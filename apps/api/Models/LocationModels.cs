@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using NetTopologySuite.Geometries;
 
 namespace Api.Models;
 
@@ -25,6 +26,8 @@ public class State
 
     [Required]
     public string Name { get; set; } = string.Empty;
+
+    public Geometry? Boundary { get; set; }
 
     public int RegionId { get; set; }
 
@@ -95,6 +98,8 @@ public class Municipality
 
     [Required]
     public string Name { get; set; } = string.Empty;
+
+    public Geometry? Boundary { get; set; }
 
     public int MicroregionId { get; set; }
 

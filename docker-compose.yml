@@ -23,7 +23,7 @@ services:
       - campanha-360-network
 
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.3-alpine
     environment:
       POSTGRES_DB: campanhas
       POSTGRES_USER: postgres

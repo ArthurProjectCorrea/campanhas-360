@@ -2,6 +2,8 @@ using Api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using NetTopologySuite.IO;
+using NetTopologySuite.Geometries;
 
 namespace Api.Data;
 
@@ -12,6 +14,7 @@ public static class DatabaseSeeder
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var logger = services.GetRequiredService<ILogger<Program>>();
+        var configuration = services.GetRequiredService<IConfiguration>();
 
         try
         {
@@ -45,20 +48,25 @@ public static class DatabaseSeeder
             }
 
             // 3. Seed Screens
-            if (!await context.Screens.AnyAsync())
-            {
-                logger.LogInformation("Semeando telas (Screens)...");
-                var screens = new List<Screen>
+            logger.LogInformation("Sincronizando telas (Screens)...");
+            var screens = new List<Screen>
                 {
                     new Screen { Id = 1, Key = "dashboard", Title = "Dashboard Executivo", Description = "Visão geral da campanha", Sidebar = "Dashboard", Icon = "layout-dashboard" },
                     new Screen { Id = 2, Key = "regional_planning", Title = "Planejamento Regional", Description = "Gestão de zonas eleitorais e roteiros", Sidebar = "Planejamento", Icon = "square-chart-gantt" },
                     new Screen { Id = 3, Key = "organization_profile", Title = "Perfil da Organização", Description = "Controle de dados da Organização", Sidebar = "Organização", Icon = "landmark" },
                     new Screen { Id = 4, Key = "user_registration", Title = "Cadastro de Usuários", Description = "Cadastro e gerenciamento de usuários", Sidebar = "Usuários", Icon = "users" },
-                    new Screen { Id = 5, Key = "access_profile", Title = "Perfil de Acesso", Description = "Gerencie as permissões e configurações deste perfil.", Sidebar = "Perfis de Acesso", Icon = "fingerprint-pattern" }
+                    new Screen { Id = 5, Key = "access_profile", Title = "Perfil de Acesso", Description = "Gerencie as permissões e configurações deste perfil.", Sidebar = "Perfis de Acesso", Icon = "fingerprint-pattern" },
+                    new Screen { Id = 6, Key = "map", Title = "Mapa", Description = "Visualização geográfica das malhas e dados", Sidebar = "Mapa", Icon = "map" }
                 };
-                context.Screens.AddRange(screens);
-                await context.SaveChangesAsync();
+
+            foreach (var screen in screens)
+            {
+                if (!await context.Screens.AnyAsync(s => s.Key == screen.Key))
+                {
+                    context.Screens.Add(screen);
+                }
             }
+            await context.SaveChangesAsync();
 
             // 4. Seed Permissions
             if (!await context.Permissions.AnyAsync())
@@ -92,30 +100,36 @@ public static class DatabaseSeeder
                 await context.SaveChangesAsync();
             }
 
-            // Garantir que o Administrador tenha as permissões corretas
-            if (!await context.Accesses.AnyAsync(a => a.AccessProfileId == profile.Id))
+            // Garantir que o Administrador tenha as permissões corretas (Sync)
+            logger.LogInformation("Sincronizando permissões mapeadas ao perfil Administrador...");
+            var allScreens = await context.Screens.ToListAsync();
+            var allPermissions = await context.Permissions.ToListAsync();
+
+            var mappings = new Dictionary<string, string[]>
             {
-                logger.LogInformation("Concedendo permissões mapeadas ao perfil Administrador...");
-                var allScreens = await context.Screens.ToListAsync();
-                var allPermissions = await context.Permissions.ToListAsync();
+                { "dashboard", new[] { "view" } },
+                { "regional_planning", new[] { "view", "update", "create", "delete" } },
+                { "organization_profile", new[] { "view", "update", "create" } },
+                { "user_registration", new[] { "view", "update", "create", "delete" } },
+                { "access_profile", new[] { "view", "update", "create", "delete" } },
+                { "map", new[] { "view" } }
+            };
 
-                var mappings = new Dictionary<string, string[]>
+            foreach (var screen in allScreens)
+            {
+                if (mappings.TryGetValue(screen.Key, out var validPermissions))
                 {
-                    { "dashboard", new[] { "view" } },
-                    { "regional_planning", new[] { "view", "update", "create", "delete" } },
-                    { "organization_profile", new[] { "view", "update", "create" } },
-                    { "user_registration", new[] { "view", "update", "create", "delete" } },
-                    { "access_profile", new[] { "view", "update", "create", "delete" } }
-                };
-
-                foreach (var screen in allScreens)
-                {
-                    if (mappings.TryGetValue(screen.Key, out var validPermissions))
+                    foreach (var pKey in validPermissions)
                     {
-                        foreach (var pKey in validPermissions)
+                        var permission = allPermissions.FirstOrDefault(p => p.Key == pKey);
+                        if (permission != null)
                         {
-                            var permission = allPermissions.FirstOrDefault(p => p.Key == pKey);
-                            if (permission != null)
+                            var hasAccess = await context.Accesses.AnyAsync(a =>
+                                a.AccessProfileId == profile.Id &&
+                                a.ScreenId == screen.Id &&
+                                a.PermissionId == permission.Id);
+
+                            if (!hasAccess)
                             {
                                 context.Accesses.Add(new Access
                                 {
@@ -127,8 +141,8 @@ public static class DatabaseSeeder
                         }
                     }
                 }
-                await context.SaveChangesAsync();
             }
+            await context.SaveChangesAsync();
 
             // 4. Seed Admin User
             var adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "admin@exemplo.com";
@@ -220,7 +234,9 @@ public static class DatabaseSeeder
                 {
                     logger.LogError(ex, "Erro ao buscar dados do IBGE para o Seed.");
                 }
+
             }
+
 
             // 8. Seed Municipalities and Hierarchy from IBGE
             var municipalityCount = await context.Municipalities.CountAsync();
@@ -359,12 +375,180 @@ public static class DatabaseSeeder
                 logger.LogInformation("Candidato de teste semeado com sucesso.");
             }
 
+
             logger.LogInformation("Seed do banco de dados concluído.");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro fatal durante o Seed do banco de dados.");
             throw;
+        }
+    }
+
+    public static async Task SeedStateMeshesAsync(ApplicationDbContext context, ILogger logger)
+    {
+        var states = await context.States.Where(s => s.Boundary == null).ToListAsync();
+        if (!states.Any()) return;
+
+        logger.LogInformation("Semeando malhas para {Count} estados...", states.Count);
+        using var client = new HttpClient();
+        var reader = new GeoJsonReader();
+
+        foreach (var state in states)
+        {
+            try
+            {
+                var url = $"https://servicodados.ibge.gov.br/api/v4/malhas/estados/{state.Id}?formato=application/vnd.geo+json";
+                var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var featureCollection = reader.Read<NetTopologySuite.Features.FeatureCollection>(json);
+
+                    // A malha individual geralmente vem como uma FeatureCollection com uma única feature ou uma geometria direta
+                    var feature = featureCollection.FirstOrDefault();
+                    if (feature != null)
+                    {
+                        var geometry = feature.Geometry;
+                        geometry.SRID = 4326;
+                        state.Boundary = geometry;
+                        logger.LogInformation("Malha do estado {State} ({Id}) carregada.", state.Name, state.Id);
+                    }
+                }
+
+                // Pequena pausa para evitar rate limit do IBGE
+                await Task.Delay(100);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Erro ao carregar malha do estado {State} ({Id}).", state.Name, state.Id);
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task SeedMunicipalityMeshesAsync(ApplicationDbContext context, ILogger logger)
+    {
+        // Pega municípios que ainda não têm malha, limitando para não estourar memória/tempo em uma única execução se necessário
+        // Mas para o seed inicial, vamos tentar processar todos em lotes
+        var municipalityIds = await context.Municipalities.Where(m => m.Boundary == null).Select(m => m.Id).ToListAsync();
+        if (!municipalityIds.Any()) return;
+
+        logger.LogInformation("Semeando malhas para {Count} municípios (isso pode demorar)...", municipalityIds.Count);
+        using var client = new HttpClient();
+        var reader = new GeoJsonReader();
+
+        int processed = 0;
+        int updated = 0;
+
+        foreach (var id in municipalityIds)
+        {
+            try
+            {
+                var url = $"https://servicodados.ibge.gov.br/api/v4/malhas/municipios/{id}?formato=application/vnd.geo+json";
+                var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var featureCollection = reader.Read<NetTopologySuite.Features.FeatureCollection>(json);
+
+                    var feature = featureCollection.FirstOrDefault();
+                    if (feature != null)
+                    {
+                        var municipality = await context.Municipalities.FindAsync(id);
+                        if (municipality != null)
+                        {
+                            var geometry = feature.Geometry;
+                            geometry.SRID = 4326;
+                            municipality.Boundary = geometry;
+                            updated++;
+                        }
+                    }
+                }
+
+                processed++;
+                if (processed % 50 == 0)
+                {
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Progresso das malhas de municípios: {Processed}/{Total}", processed, municipalityIds.Count);
+                }
+
+                // Pausa curta para respeitar a API do IBGE
+                await Task.Delay(50);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Erro ao carregar malha do município ID: {Id}.", id);
+            }
+        }
+
+        await context.SaveChangesAsync();
+        logger.LogInformation("Semeio de malhas de municípios concluído. Atualizados: {Updated}", updated);
+    }
+
+    private static async Task SeedMeshesAsync(ApplicationDbContext context, ILogger logger, IConfiguration configuration)
+    {
+        var stateMeshUrl = configuration["IBGE:StateMeshUrl"];
+        var municipalityMeshUrl = configuration["IBGE:MunicipalityMeshUrl"];
+
+        if (!string.IsNullOrEmpty(stateMeshUrl))
+        {
+            logger.LogInformation("Semeando malhas de Estados a partir de: {Url}", stateMeshUrl);
+            await ProcessGeoJsonMeshAsync<State>(context, logger, stateMeshUrl, (id) => context.States.FindAsync(id), (entity, geometry) => entity.Boundary = geometry);
+        }
+
+        if (!string.IsNullOrEmpty(municipalityMeshUrl))
+        {
+            logger.LogInformation("Semeando malhas de Municípios a partir de: {Url}", municipalityMeshUrl);
+            await ProcessGeoJsonMeshAsync<Municipality>(context, logger, municipalityMeshUrl, (id) => context.Municipalities.FindAsync(id), (entity, geometry) => entity.Boundary = geometry);
+        }
+    }
+
+    private static async Task ProcessGeoJsonMeshAsync<T>(ApplicationDbContext context, ILogger logger, string url, Func<int, ValueTask<T?>> findEntity, Action<T, Geometry> setBoundary) where T : class
+    {
+        using var client = new HttpClient();
+        try
+        {
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var reader = new GeoJsonReader();
+            var featureCollection = reader.Read<NetTopologySuite.Features.FeatureCollection>(json);
+
+            int updatedCount = 0;
+            foreach (var feature in featureCollection)
+            {
+                // Tenta encontrar o ID no GeoJSON (propriedade 'id', 'codarea', 'cod_uf', 'cod_mun', etc)
+                int? id = null;
+                if (feature.Attributes.Exists("id")) id = Convert.ToInt32(feature.Attributes["id"]);
+                else if (feature.Attributes.Exists("codarea")) id = Convert.ToInt32(feature.Attributes["codarea"]);
+                else if (feature.Attributes.Exists("cod_uf")) id = Convert.ToInt32(feature.Attributes["cod_uf"]);
+                else if (feature.Attributes.Exists("cod_mun")) id = Convert.ToInt32(feature.Attributes["cod_mun"]);
+
+                if (id.HasValue)
+                {
+                    var entity = await findEntity(id.Value);
+                    if (entity != null)
+                    {
+                        var geometry = feature.Geometry;
+                        geometry.SRID = 4326;
+                        setBoundary(entity, geometry);
+                        updatedCount++;
+                    }
+                }
+            }
+
+            if (updatedCount > 0)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("Malhas de {Type} atualizadas: {Count}", typeof(T).Name, updatedCount);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao processar malha GeoJSON de {Url}", url);
         }
     }
 }

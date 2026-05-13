@@ -47,6 +47,7 @@ const SCREEN_PERMISSIONS_MAPPING: Record<string, string[]> = {
   user_registration: ['view', 'update', 'create', 'delete'],
   access_profile: ['view', 'update', 'create', 'delete'],
   regional_planning: ['view', 'update', 'create', 'delete'],
+  map: ['view'],
 }
 
 const GLOBAL_PERMISSIONS_MAPPING: Record<string, string[]> = {

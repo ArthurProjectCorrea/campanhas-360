@@ -21,6 +21,10 @@ export const getNavMain = (permittedScreens: Screen[], domain: string): NavMainI
       url: `/${domain}/regional-planning`,
     },
     {
+      key: 'map',
+      url: `/${domain}/map`,
+    },
+    {
       name: 'Configurações',
       icon: 'settings',
       items: [

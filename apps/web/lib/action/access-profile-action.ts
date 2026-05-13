@@ -25,8 +25,14 @@ export async function getAccessProfileData() {
         headers: { Authorization: `Bearer ${session.apiToken}` },
         next: { tags: ['access-profiles'], revalidate: 0 },
       }),
-      fetch(`${API_URL}/screens`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
-      fetch(`${API_URL}/permissions`, { headers: { Authorization: `Bearer ${session.apiToken}` } }),
+      fetch(`${API_URL}/screens`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+        next: { revalidate: 0 },
+      }),
+      fetch(`${API_URL}/permissions`, {
+        headers: { Authorization: `Bearer ${session.apiToken}` },
+        next: { revalidate: 0 },
+      }),
     ])
 
     if (!profilesRes.ok) return null

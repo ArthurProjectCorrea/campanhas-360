@@ -23,6 +23,8 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        // Adiciona conversores GeoJSON para System.Text.Json
+        options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
     });
 builder.Services.AddCors(options =>
 {
@@ -81,7 +83,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(dbConnectionString));
+    options.UseNpgsql(dbConnectionString, o => o.UseNetTopologySuite()));
 
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
@@ -120,7 +122,29 @@ var app = builder.Build();
 // Seed and Migrations
 using (var scope = app.Services.CreateScope())
 {
-    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    // Seed estrutural (Síncrono)
+    await DatabaseSeeder.SeedAsync(services);
+
+    // Seed de malhas (Assíncrono em Background)
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            using var bgScope = app.Services.CreateScope();
+            var bgContext = bgScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var bgLogger = bgScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            await DatabaseSeeder.SeedStateMeshesAsync(bgContext, bgLogger);
+            await DatabaseSeeder.SeedMunicipalityMeshesAsync(bgContext, bgLogger);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro no seed de malhas em background.");
+        }
+    });
 }
 
 app.UseSwagger();

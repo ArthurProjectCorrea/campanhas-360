@@ -40,6 +40,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     {
         base.OnModelCreating(builder);
 
+        // Habilita a extensão espacial PostGIS
+        builder.HasPostgresExtension("postgis");
+
         // Configuração para evitar duplicados na importação do TSE
         builder.Entity<TseCandidate>()
             .HasIndex(t => t.SQ_CANDIDATO)
